@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.citymemory.ui.MapCameraTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-08-14T09:41:35.446Z" hostname="macs-MacBook-Pro.local" time="0.014">
+<testsuite name="com.citymemory.ui.MapCameraTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-08-14T13:07:03.244Z" hostname="macs-MacBook-Pro.local" time="0.013">
   <properties/>
-  <testcase name="the city cannot be dragged off the screen" classname="com.citymemory.ui.MapCameraTest" time="0.013"/>
+  <testcase name="the city cannot be dragged off the screen" classname="com.citymemory.ui.MapCameraTest" time="0.012"/>
   <testcase name="double tap dives in around the tap and back out again" classname="com.citymemory.ui.MapCameraTest" time="0.0"/>
   <testcase name="the visible world shrinks as you zoom in" classname="com.citymemory.ui.MapCameraTest" time="0.0"/>
-  <testcase name="starts framed on the whole city" classname="com.citymemory.ui.MapCameraTest" time="0.0"/>
+  <testcase name="starts framed on the whole city" classname="com.citymemory.ui.MapCameraTest" time="0.001"/>
   <testcase name="world and screen conversions are inverses" classname="com.citymemory.ui.MapCameraTest" time="0.0"/>
   <testcase name="repeated pinching does not drift" classname="com.citymemory.ui.MapCameraTest" time="0.0"/>
   <testcase name="zooming back out re-pins the overview exactly" classname="com.citymemory.ui.MapCameraTest" time="0.0"/>
   <testcase name="centring puts a world point in the middle of the viewport" classname="com.citymemory.ui.MapCameraTest" time="0.0"/>
-  <testcase name="zoom is clamped at both ends" classname="com.citymemory.ui.MapCameraTest" time="0.001"/>
+  <testcase name="zoom is clamped at both ends" classname="com.citymemory.ui.MapCameraTest" time="0.0"/>
   <testcase name="pinching keeps the ground under the fingers" classname="com.citymemory.ui.MapCameraTest" time="0.0"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>

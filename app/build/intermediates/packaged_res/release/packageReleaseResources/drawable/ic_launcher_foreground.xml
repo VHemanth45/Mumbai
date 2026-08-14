@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A dim skyline with three lit windows: the app's core metaphor at 108dp. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <path
+        android:fillColor="#2A3145"
+        android:pathData="M30,72 h11 v-22 h-11 z M44,72 h13 v-31 h-13 z M60,72 h10 v-17 h-10 z M73,72 h7 v-25 h-7 z" />
+
+    <path
+        android:fillColor="#FFB765"
+        android:pathData="M47,46 h3 v4 h-3 z M51,54 h3 v4 h-3 z M33,57 h3 v4 h-3 z" />
+
+    <path
+        android:fillColor="#5FD0E8"
+        android:pathData="M63,60 h3 v4 h-3 z" />
+
+</vector>

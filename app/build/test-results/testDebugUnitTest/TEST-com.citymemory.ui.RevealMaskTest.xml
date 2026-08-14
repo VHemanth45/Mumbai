@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.citymemory.ui.RevealMaskTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-08-14T13:06:57.147Z" hostname="macs-MacBook-Pro.local" time="3.08">
+  <properties/>
+  <testcase name="masking with a disc would leave the corners lit, which is the bug" classname="com.citymemory.ui.RevealMaskTest" time="3.059"/>
+  <testcase name="the fast path leaves the corners dark and the centre lit" classname="com.citymemory.ui.RevealMaskTest" time="0.009"/>
+  <testcase name="the single-disc fast path masks the same pixels as the layer it replaces" classname="com.citymemory.ui.RevealMaskTest" time="0.012"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

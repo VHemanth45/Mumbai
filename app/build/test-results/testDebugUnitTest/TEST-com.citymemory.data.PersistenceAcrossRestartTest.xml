@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.citymemory.data.PersistenceAcrossRestartTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-08-14T09:41:31.887Z" hostname="macs-MacBook-Pro.local" time="2.901">
+<testsuite name="com.citymemory.data.PersistenceAcrossRestartTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-08-14T13:07:00.427Z" hostname="macs-MacBook-Pro.local" time="2.093">
   <properties/>
-  <testcase name="undoing a visit also survives a restart" classname="com.citymemory.data.PersistenceAcrossRestartTest" time="2.785"/>
-  <testcase name="visited places wishlist and progress all survive a restart" classname="com.citymemory.data.PersistenceAcrossRestartTest" time="0.059"/>
-  <testcase name="re-seeding on relaunch never clears user state" classname="com.citymemory.data.PersistenceAcrossRestartTest" time="0.057"/>
+  <testcase name="undoing a visit also survives a restart" classname="com.citymemory.data.PersistenceAcrossRestartTest" time="1.993"/>
+  <testcase name="visited places wishlist and progress all survive a restart" classname="com.citymemory.data.PersistenceAcrossRestartTest" time="0.052"/>
+  <testcase name="re-seeding on relaunch never clears user state" classname="com.citymemory.data.PersistenceAcrossRestartTest" time="0.048"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

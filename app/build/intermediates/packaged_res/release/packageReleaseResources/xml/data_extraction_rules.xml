@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android 12+. The exploration history is the entire value of the app and lives
+  only on the device, so it is explicitly included in both cloud backup and
+  device-to-device transfer. There is no account, no token and nothing sensitive.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <include domain="database" path="." />
+    </cloud-backup>
+    <device-transfer>
+        <include domain="database" path="." />
+    </device-transfer>
+</data-extraction-rules>

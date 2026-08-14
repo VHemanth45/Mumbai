@@ -29,9 +29,18 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.CityMemory">
 
+        <!--
+          configChanges: this is a Compose-only Activity, so it can absorb
+          configuration changes itself rather than being torn down and rebuilt.
+          That matters more here than in most apps — a rotation would otherwise
+          re-inflate the whole tree and re-run the map's projection of ~387,000
+          points, which is most of a second on a mid-range phone.
+        -->
         <activity
             android:name=".MainActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|density|fontScale|uiMode|layoutDirection|locale"
             android:exported="true"
+            android:resizeableActivity="true"
             android:theme="@style/Theme.CityMemory"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>

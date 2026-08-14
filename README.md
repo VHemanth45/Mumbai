@@ -27,7 +27,7 @@ rm -rf .toolchain/android-sdk/emulator .toolchain/android-sdk/system-images .too
 source .toolchain/env.sh        # JAVA_HOME, ANDROID_HOME, GRADLE_USER_HOME, PATH
 
 ./gradlew :app:assembleDebug    # build the APK
-./gradlew :app:testDebugUnitTest # run all 62 tests (no device needed)
+./gradlew :app:testDebugUnitTest # run all 94 tests (no device needed)
 ./gradlew :app:installDebug     # install on a running device/emulator
 ```
 
@@ -45,7 +45,9 @@ adb shell am start -n com.citymemory/.MainActivity
 In **Android Studio**, open the `Mumbai` folder directly. `local.properties` already points at
 the bundled SDK. If Studio prefers its own JDK, that is fine — any JDK 17 works.
 
-`minSdk 26`, `targetSdk 35`, `compileSdk 35`.
+`minSdk 26`, `targetSdk 35`, `compileSdk 35`. Release builds run R8 with resource shrinking
+(18 MB debug → 2.7 MB release); `MainActivity` declares `configChanges` so a rotation does not
+tear down the tree and re-project the city.
 
 ---
 
@@ -139,7 +141,13 @@ The mask needs its own layer because discs overlap. Punching each disc straight 
 so two nearby explored places would carve holes in each other. Accumulating them in B first
 turns overlap into union, which is what "both of these are lit" should mean.
 
-**Getting 387,000 points to 60 fps** took four things, in `MapPaths` and `CityMapView`:
+A single disc has nothing to overlap, so that case skips layer B and masks straight into A —
+which is the zoomed-into-one-place case, where the frame budget is tightest. It has to be
+drawn as a *rect* filled with the gradient rather than as a circle: `DstIn` only touches the
+pixels a draw covers, so a circle would leave the corners of the layer at full brightness.
+`RevealMaskTest` renders both paths and compares them pixel by pixel.
+
+**Getting 387,000 points to 60 fps** took five things, in `MapPaths` and `CityMapView`:
 
 - **Tiling.** One `Path` per kind means Skia walks every residential street in the city to
   draw the four on screen. Shapes are bucketed into a 12×12 grid and only intersecting tiles
@@ -147,16 +155,40 @@ turns overlap into union, which is what "both of these are lit" should mean.
 - **Two levels of detail.** At the overview the city is ~25 m to the pixel, so a coastline
   surveyed to the metre puts twenty vertices on one pixel. Below 3× zoom each tile draws a
   decimated path instead: the overview goes from ~93,000 points to a few thousand.
-- **Lazy paths.** Tiles build on first draw, so the overview never pays for the buildings you
-  may never zoom into, and the ones around a place cost a single tile when you arrive.
+- **Lazy paths, built ahead of the camera.** Tiles build on first draw, so the overview never
+  pays for the buildings you may never zoom into. Building one inside the draw pass drops the
+  frame that needed it, though — which is the frame in the middle of the pinch that zoomed in
+  far enough to want it — so `CityMapView` also prewarms them on `Dispatchers.Default` just
+  ahead of the camera, and mid-gesture the draw pass skips anything not ready yet rather than
+  stopping to tessellate it.
 - **Off the main thread.** Projecting the city is ~110 ms of arithmetic and needs the canvas
   size, so it cannot happen before layout. `MapPaths` touches no Skia objects, so it is built
   on `Dispatchers.Default` and the map fades in — rather than freezing the first frame.
+- **Nothing allocated per frame.** The reveal gradients, the two `saveLayer` paints and the
+  reveal list live in a `MapRenderCache`. A `Brush.radialGradient` builds a Skia shader when
+  it is drawn, so making them per reveal per frame meant three new shaders for every lit place
+  sixty times a second; every reveal in a frame shares a radius, so one cached entry serves
+  all of them.
 
-Above 4× zoom the breathing animation stops being read, which means the composable stops
-recomposing for it and the map stops redrawing entirely: a map you are reading should hold
-still, and it should not re-rasterise every building sixty times a second to pulse them by
-three percent.
+**Everything that moves is read in the draw pass, not in composition** — zoom, pan, the
+breathing and the bloom are all snapshot state read inside `drawBehind`, so a pinch
+invalidates drawing and nothing else. Reading any of them in the composable body instead is
+the easy mistake: it recomposes the whole map on every frame of every gesture, rebuilding the
+modifier chain while the user is trying to zoom.
+
+Above 4× zoom the breathing animation stops being read at all, so the map stops redrawing
+entirely: a map you are reading should hold still, and it should not re-rasterise every
+building sixty times a second to pulse them by three percent.
+
+**Gestures** live in `MapGestures.kt`, as one detector rather than Compose's
+`detectTransformGestures` and `detectTapGestures` stacked on each other. That arrangement cost
+three things: `detectTapGestures` consumed the down and then held every tap for the double-tap
+timeout before reporting it; transform gestures do not begin until the touch slop is crossed,
+which on a pinch swallows the first few millimetres and then jumps (measured: a true 2.0×
+pinch reported as 1.33×); and nothing had momentum. So a second finger starts the zoom on its
+very first move with no slop, a tap that lands on a place is reported immediately and never
+waits to become a zoom, and a one-finger drag hands its velocity to a decay so the map coasts.
+`MapGestureTest` pins all of it.
 
 `GeoProjector` handles lat/lng → pixels with a local equirectangular projection (longitude
 scaled by cos(latitude) so the city is not horizontally stretched). Everything is projected
@@ -227,7 +259,7 @@ erase the entire metaphor.
 
 ## Verification
 
-83 unit tests, all passing, none requiring a device (`./gradlew :app:testDebugUnitTest`):
+94 unit tests, all passing, none requiring a device (`./gradlew :app:testDebugUnitTest`):
 
 | Suite | Tests | Covers |
 |---|---|---|
@@ -237,6 +269,8 @@ erase the entire metaphor.
 | `GeoProjectorTest` | 10 | orientation, centring, aspect ratio, all 80 places in bounds |
 | `CityMapAssetTest` | 10 | the real shipped asset — see below |
 | `MapCameraTest` | 10 | pinch anchoring, drift over 30 steps, clamping, pan bounds |
+| `MapGestureTest` | 8 | pinch loses nothing to slop, taps are not delayed, drag slop, fling velocity |
+| `RevealMaskTest` | 3 | the one-disc mask fast path is pixel-identical to the layer it replaces |
 | `NavigationLauncherTest` | 5 | all three fallback rungs, no-handler case, locale-safe coordinates |
 | `ScreenInteractionTest` | 14 | Compose UI on Robolectric — search, filters, toggles, progress |
 | `ExploreViewModelTest` | 6 | Explore state, which its own UI test cannot reach (see below) |

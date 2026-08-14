@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.citymemory.ui.GeoProjectorTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-08-14T09:41:35.431Z" hostname="macs-MacBook-Pro.local" time="0.014">
+<testsuite name="com.citymemory.ui.GeoProjectorTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-08-14T13:07:03.231Z" hostname="macs-MacBook-Pro.local" time="0.012">
   <properties/>
-  <testcase name="every seeded mumbai place lands inside the mock geometry bounds" classname="com.citymemory.ui.GeoProjectorTest" time="0.011"/>
+  <testcase name="every seeded mumbai place lands inside the mock geometry bounds" classname="com.citymemory.ui.GeoProjectorTest" time="0.01"/>
   <testcase name="north is up" classname="com.citymemory.ui.GeoProjectorTest" time="0.001"/>
   <testcase name="east is right" classname="com.citymemory.ui.GeoProjectorTest" time="0.0"/>
   <testcase name="aspect ratio is preserved so the city is not stretched" classname="com.citymemory.ui.GeoProjectorTest" time="0.0"/>
   <testcase name="degenerate size does not blow up" classname="com.citymemory.ui.GeoProjectorTest" time="0.0"/>
-  <testcase name="unknown city yields empty geometry rather than mumbai" classname="com.citymemory.ui.GeoProjectorTest" time="0.001"/>
+  <testcase name="unknown city yields empty geometry rather than mumbai" classname="com.citymemory.ui.GeoProjectorTest" time="0.0"/>
   <testcase name="projection stays inside the canvas including padding" classname="com.citymemory.ui.GeoProjectorTest" time="0.0"/>
   <testcase name="fallback outline provides land, green space and roads" classname="com.citymemory.ui.GeoProjectorTest" time="0.001"/>
   <testcase name="fallback outline carries no detail geometry to light up" classname="com.citymemory.ui.GeoProjectorTest" time="0.0"/>

@@ -8,8 +8,6 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -18,8 +16,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
@@ -41,6 +42,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import com.citymemory.domain.model.CityGeometry
@@ -52,6 +54,10 @@ import com.citymemory.ui.theme.WishCyan
 import kotlin.math.max
 import kotlin.math.min
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.conflate
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
@@ -82,7 +88,16 @@ import kotlinx.coroutines.withContext
  * straight into A with `DstIn` would let the transparent rim of a second disc
  * erase the solid centre of the first, so two nearby explored places would
  * carve holes in each other. Accumulating them in B first turns overlap into
- * union, which is what "both of these are lit" should mean.
+ * union, which is what "both of these are lit" should mean. With a single disc
+ * there is nothing to overlap, and that layer is skipped — see [drawLitAreas].
+ *
+ * **Everything that moves is read in the draw pass, not in composition.** Zoom,
+ * pan, the breathing and the bloom are all snapshot state read inside
+ * `drawBehind`, so a pinch invalidates drawing and nothing else. Reading any of
+ * them in the composable body instead — which is the easy mistake, and what
+ * this used to do with the breathing — recomposes the whole map on every frame
+ * of every gesture, rebuilding the modifier chain sixty times a second while
+ * the user is trying to zoom.
  *
  * The renderer knows nothing about Mumbai, Room or the dataset: it takes
  * geometry in lat/lng and places, and draws them.
@@ -102,8 +117,7 @@ fun CityMapView(
     // cannot happen before layout. Doing it inside the draw pass would freeze
     // the first frame, so it happens off the main thread and the map fades in
     // when it is ready. `MapPaths` touches no Skia objects, which is what makes
-    // that safe; the Path objects themselves are still built on the UI thread,
-    // lazily, one tile at a time.
+    // that safe.
     val density = LocalDensity.current
     var viewport by remember { mutableStateOf(IntSize.Zero) }
 
@@ -124,6 +138,8 @@ fun CityMapView(
         }
     }
 
+    val cache = remember { MapRenderCache() }
+
     // A slow shared breath so a lit area feels alive rather than stencilled.
     val breath = rememberInfiniteTransition(label = "breathing").animateFloat(
         initialValue = 0.97f,
@@ -134,13 +150,6 @@ fun CityMapView(
         ),
         label = "breath",
     )
-
-    // Read only while zoomed out. This is not just taste — an animation that is
-    // never read is an animation this composable never recomposes for, so at
-    // street level the map stops redrawing entirely instead of re-rasterising
-    // every building sixty times a second to pulse them by three percent. It is
-    // also what you want to look at: a map you are reading should hold still.
-    val breathing = if (camera.scale < BREATHING_MAX_SCALE) breath.value else 1f
 
     // One-shot: light spreading outward when a place is newly marked visited.
     val visitedIds = remember(places) { places.filter { it.isVisited }.map { it.id }.toSet() }
@@ -159,46 +168,116 @@ fun CityMapView(
         }
     }
 
-    // Read inside the draw pass rather than captured by it, so that marking a
-    // single place visited repaints without disturbing anything upstream.
+    // ---- Prewarming -------------------------------------------------------
+
+    // Paths are built lazily, and a tile of building footprints takes far
+    // longer than a frame. Built on demand inside the draw pass, the frame that
+    // first needs one is dropped — which is exactly the frame in the middle of
+    // the pinch that zoomed in far enough to need it. So they are built here
+    // instead, off the main thread and slightly ahead of the camera, and the
+    // draw pass skips anything not ready yet while a gesture is running.
+
+    LaunchedEffect(prepared) {
+        val map = prepared ?: return@LaunchedEffect
+        // The overview, in full, once: it is what every gesture starts from.
+        withContext(Dispatchers.Default) {
+            for (layer in MapStyle.layers) {
+                if (layer.minScale < MapPaths.COARSE_MAX_SCALE) {
+                    map.paths.prewarm(layer.kind, WHOLE_WORLD, coarse = true)
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(prepared) {
+        val map = prepared ?: return@LaunchedEffect
+        snapshotFlow { camera.scale to camera.offset }
+            .conflate()
+            .collect {
+                val canvas = viewport.toSize()
+                if (canvas.minDimension > 0f) {
+                    val scale = camera.scale
+                    val visible = camera.visibleWorld(canvas)
+                    // Reach past the edges, so panning finds tiles already built.
+                    val margin = max(visible.width, visible.height) * PREWARM_MARGIN
+                    val ahead = visible.inflate(margin)
+                    // The same level of detail the draw pass settled on, so this
+                    // can never spend its time building the layer it is not using.
+                    val coarse = cache.detail.coarse
+                    withContext(Dispatchers.Default) {
+                        for (layer in MapStyle.layers) {
+                            if (scale >= layer.minScale) {
+                                map.paths.prewarm(layer.kind, ahead, coarse)
+                            }
+                        }
+                    }
+                }
+                delay(PREWARM_INTERVAL_MILLIS)
+            }
+    }
+
+    // ---- Gestures ---------------------------------------------------------
+
+    val scope = rememberCoroutineScope()
+    var settleJob by remember { mutableStateOf<Job?>(null) }
+    // Read only in the draw pass, so toggling it costs a redraw and not a
+    // recomposition.
+    var gesturing by remember { mutableStateOf(false) }
+
+    // Read inside the draw pass and the gesture callbacks rather than captured
+    // by them, so that marking a single place visited repaints without
+    // restarting the pointer handler.
     val placesState = rememberUpdatedState(places)
     val selectedState = rememberUpdatedState(selectedPlaceId)
-    val bloomingState = rememberUpdatedState(bloomingPlaceId)
-    val bloomState = rememberUpdatedState(bloom.value)
-    val breathingState = rememberUpdatedState(breathing)
+    val preparedState = rememberUpdatedState(prepared)
     val currentOnPlaceSelected by rememberUpdatedState(onPlaceSelected)
+    val tapSlopPx = with(density) { TAP_SLOP.toPx() }
 
-    val visitedCount = places.count { it.isVisited }
-    val description =
+    val description = remember(places) {
+        val visitedCount = places.count { it.isVisited }
         "Map of the city. $visitedCount of ${places.size} places explored. " +
             "Pinch to zoom into an explored area, double tap to jump in."
+    }
 
     Spacer(
         modifier = modifier
             .fillMaxSize()
             .semantics { contentDescription = description }
             .onSizeChanged { viewport = it }
+            // `Unit`: this must never restart. Keyed on anything that changes
+            // during use, a gesture in progress would be cancelled mid-pinch.
             .pointerInput(Unit) {
-                detectTransformGestures { centroid, pan, zoom, _ ->
-                    camera.transform(zoom, pan, centroid, size.toSize())
-                }
-            }
-            .pointerInput(prepared) {
-                val projector = prepared?.projector ?: return@pointerInput
-                val slop = TAP_SLOP.toPx()
-                detectTapGestures(
-                    onDoubleTap = { camera.toggleZoom(it, size.toSize()) },
+                detectMapGestures(
+                    onGestureStart = {
+                        settleJob?.cancel()
+                        gesturing = true
+                    },
+                    onTransform = { centroid, pan, zoom ->
+                        camera.transform(zoom, pan, centroid, size.toSize())
+                    },
+                    onGestureEnd = { velocity ->
+                        gesturing = false
+                        if (velocity != Velocity.Zero) {
+                            settleJob = scope.launch {
+                                camera.flingPan(velocity, viewport.toSize())
+                            }
+                        }
+                    },
                     onTap = { tap ->
-                        placesState.value
-                            .minByOrNull {
-                                (camera.worldToScreen(projector.project(it.location)) - tap)
-                                    .getDistanceSquared()
-                            }
-                            ?.takeIf {
-                                (camera.worldToScreen(projector.project(it.location)) - tap)
-                                    .getDistance() <= slop
-                            }
-                            ?.let(currentOnPlaceSelected)
+                        val hit = preparedState.value?.projector?.let { projector ->
+                            placesState.value.nearestWithin(tap, camera, projector, tapSlopPx)
+                        }
+                        hit?.let(currentOnPlaceSelected)
+                        hit != null
+                    },
+                    onDoubleTap = { focus ->
+                        settleJob = scope.launch {
+                            camera.animateZoomTo(
+                                target = camera.targetForToggle(),
+                                focus = focus,
+                                viewport = viewport.toSize(),
+                            )
+                        }
                     },
                 )
             }
@@ -208,19 +287,53 @@ fun CityMapView(
                     drawNight()
                     return@drawBehind
                 }
+                // Every one of these reads happens here, in the draw phase.
+                val scale = camera.scale
+                cache.detail.update(scale)
                 drawCity(
                     paths = map.paths,
                     projector = map.projector,
                     camera = camera,
+                    cache = cache,
                     places = placesState.value,
                     revealRadius = map.revealRadius,
-                    breathing = breathingState.value,
+                    // Read only while zoomed out. Not just taste: an animation
+                    // that is never read is one this map never redraws for, so
+                    // at street level it stops repainting entirely instead of
+                    // re-rasterising every building sixty times a second to
+                    // pulse them by three percent. It is also what you want to
+                    // look at — a map you are reading should hold still.
+                    breathing = if (scale < BREATHING_MAX_SCALE) breath.value else 1f,
                     selectedPlaceId = selectedState.value,
-                    bloomingPlaceId = bloomingState.value,
-                    bloomProgress = bloomState.value,
+                    bloomingPlaceId = bloomingPlaceId,
+                    bloomProgress = bloom.value,
+                    // Mid-gesture, draw what is ready and let the prewarmer
+                    // catch up. Frame rate is worth more than a tile of
+                    // buildings arriving one frame late.
+                    onlyReady = gesturing,
                 )
             },
     )
+}
+
+/** The place nearest [tap] on screen, if any is within [slop] of it. */
+private fun List<Place>.nearestWithin(
+    tap: Offset,
+    camera: MapCamera,
+    projector: GeoProjector,
+    slop: Float,
+): Place? {
+    var best: Place? = null
+    var bestDistance = slop * slop
+    for (place in this) {
+        val delta = camera.worldToScreen(projector.project(place.location)) - tap
+        val distance = delta.getDistanceSquared()
+        if (distance <= bestDistance) {
+            bestDistance = distance
+            best = place
+        }
+    }
+    return best
 }
 
 // ---------------------------------------------------------------------------
@@ -236,18 +349,154 @@ private class PreparedMap(
 )
 
 /** A place's lit area, in world (scale-1) coordinates. */
-private class Reveal(val center: Offset, val radius: Float)
+private class Reveal(var center: Offset, var radius: Float)
+
+/**
+ * The per-view scratch a frame needs and must not allocate.
+ *
+ * At sixty frames a second everything here would otherwise be garbage: two
+ * `Paint`s, a list, and — the expensive one — a radial gradient per lit place
+ * per frame, each of which builds a Skia shader.
+ */
+private class MapRenderCache {
+    val brushes = RevealBrushes()
+    val layerPaint = Paint()
+    val maskPaint = Paint().apply { blendMode = BlendMode.DstIn }
+    val detail = DetailLevel()
+    val reveals = ArrayList<Reveal>()
+    private var pooled = ArrayList<Reveal>()
+
+    /** Hands back a [Reveal], reusing one from a previous frame if there is one. */
+    fun reveal(center: Offset, radius: Float): Reveal {
+        val index = reveals.size
+        val existing = pooled.getOrNull(index)
+        return if (existing != null) {
+            existing.center = center
+            existing.radius = radius
+            existing
+        } else {
+            Reveal(center, radius).also { pooled.add(it) }
+        }
+    }
+}
+
+/**
+ * Which level of detail to draw, with a deadband around the switch.
+ *
+ * Without one, a pinch that hovers near [MapPaths.COARSE_MAX_SCALE] alternates
+ * between the decimated paths and the full ones frame by frame, and since the
+ * two cost very different amounts to rasterise the result is visible judder at
+ * exactly the zoom where people stop to look.
+ */
+private class DetailLevel {
+    var coarse = true
+        private set
+
+    fun update(scale: Float) {
+        val threshold = if (coarse) {
+            MapPaths.COARSE_MAX_SCALE * DETAIL_HYSTERESIS
+        } else {
+            MapPaths.COARSE_MAX_SCALE / DETAIL_HYSTERESIS
+        }
+        coarse = scale < threshold
+    }
+}
+
+/**
+ * The radial gradients a lit area is made of, kept alive between frames.
+ *
+ * `Brush.radialGradient` bakes its centre and radius in and builds a shader the
+ * first time it is drawn, so building one per reveal per frame meant three new
+ * shaders for every lit place on screen, every frame. Every reveal in a frame
+ * shares a radius — the breathing and the zoom are common to all of them — so a
+ * single entry per gradient serves the whole frame, and survives into the next
+ * one whenever the camera and the breath are still.
+ *
+ * They are centred on the origin and positioned by translating the canvas,
+ * which is what lets one brush serve reveals in different places.
+ */
+private class RevealBrushes {
+    private var washRadius = Float.NaN
+    private var wash: Brush? = null
+
+    private var maskRadius = Float.NaN
+    private var mask: Brush? = null
+
+    private var hazeRadius = Float.NaN
+    private var hazeAlpha = Float.NaN
+    private var haze: Brush? = null
+
+    /** Warm ground under the streets, so a lit area reads as illuminated. */
+    fun wash(radius: Float): Brush {
+        val cached = wash
+        if (cached != null && washRadius == radius) return cached
+        return Brush.radialGradient(
+            colors = listOf(
+                MapStyle.LightWash.copy(alpha = 0.15f),
+                MapStyle.LightWash.copy(alpha = 0.06f),
+                MapStyle.LightWash.copy(alpha = 0.02f),
+            ),
+            center = Offset.Zero,
+            radius = radius,
+        ).also {
+            wash = it
+            washRadius = radius
+        }
+    }
+
+    /**
+     * Solid to well past halfway, then feathered — a lit district with a soft
+     * edge, not a vignette that is only bright dead centre.
+     */
+    fun mask(radius: Float): Brush {
+        val cached = mask
+        if (cached != null && maskRadius == radius) return cached
+        return Brush.radialGradient(
+            colorStops = arrayOf(
+                0.0f to Color.White,
+                MASK_SOLID_FRACTION to Color.White,
+                1.0f to Color.Transparent,
+            ),
+            center = Offset.Zero,
+            radius = radius,
+        ).also {
+            mask = it
+            maskRadius = radius
+        }
+    }
+
+    /** Atmospheric spill, reaching past the lit area itself. */
+    fun haze(radius: Float, alpha: Float): Brush {
+        val cached = haze
+        if (cached != null && hazeRadius == radius && hazeAlpha == alpha) return cached
+        return Brush.radialGradient(
+            colors = listOf(
+                MapStyle.LightHalo.copy(alpha = alpha),
+                MapStyle.LightHalo.copy(alpha = alpha * 0.25f),
+                Color.Transparent,
+            ),
+            center = Offset.Zero,
+            radius = radius,
+        ).also {
+            haze = it
+            hazeRadius = radius
+            hazeAlpha = alpha
+        }
+    }
+}
 
 private fun DrawScope.drawCity(
     paths: MapPaths,
     projector: GeoProjector,
     camera: MapCamera,
+    cache: MapRenderCache,
     places: List<Place>,
     revealRadius: Float,
     breathing: Float,
     selectedPlaceId: String?,
     bloomingPlaceId: String?,
     bloomProgress: Float,
+    onlyReady: Boolean,
 ) {
     val scale = camera.scale
     val offset = camera.offset
@@ -260,10 +509,11 @@ private fun DrawScope.drawCity(
         translate(offset.x, offset.y)
         scale(scale, scale, pivot = Offset.Zero)
     }) {
-        drawLayers(paths, visible, lit = false, scale = scale)
+        drawLayers(paths, visible, lit = false, scale = scale, cache = cache, onlyReady = onlyReady)
     }
 
     val reveals = places.buildReveals(
+        into = cache,
         projector = projector,
         radius = revealRadius,
         breathing = breathing,
@@ -273,7 +523,7 @@ private fun DrawScope.drawCity(
     )
 
     if (reveals.isNotEmpty()) {
-        drawLitAreas(paths, camera, reveals, viewport)
+        drawLitAreas(paths, camera, cache, reveals, viewport, onlyReady)
     }
 
     drawPlaces(
@@ -303,6 +553,7 @@ private fun DrawScope.drawNight() {
  * Which places are lit, how wide, and only those that could touch the screen.
  */
 private fun List<Place>.buildReveals(
+    into: MapRenderCache,
     projector: GeoProjector,
     radius: Float,
     breathing: Float,
@@ -310,7 +561,8 @@ private fun List<Place>.buildReveals(
     bloomProgress: Float,
     visible: Rect,
 ): List<Reveal> {
-    var reveals: MutableList<Reveal>? = null
+    val reveals = into.reveals
+    reveals.clear()
     for (place in this) {
         if (!place.isVisited) continue
         val center = projector.project(place.location)
@@ -323,22 +575,25 @@ private fun List<Place>.buildReveals(
         val r = radius * growth * breathing
         if (center.x + r < visible.left || center.x - r > visible.right) continue
         if (center.y + r < visible.top || center.y - r > visible.bottom) continue
-        (reveals ?: ArrayList<Reveal>().also { reveals = it }) += Reveal(center, r)
+        reveals.add(into.reveal(center, r))
     }
-    return reveals ?: emptyList()
+    return reveals
 }
 
 /**
  * The lit city, masked to the explored areas. See the class docs for why the
- * mask gets its own layer.
+ * mask normally gets its own layer, and why one reveal does not need it.
  */
 private fun DrawScope.drawLitAreas(
     paths: MapPaths,
     camera: MapCamera,
+    cache: MapRenderCache,
     reveals: List<Reveal>,
     viewport: Size,
+    onlyReady: Boolean,
 ) {
     val scale = camera.scale
+    val brushes = cache.brushes
 
     // Haze belongs to the distant view: at the overview it is what tells you
     // an area is lit at all, and by street level it would only fog the streets.
@@ -347,19 +602,10 @@ private fun DrawScope.drawLitAreas(
         for (reveal in reveals) {
             val center = camera.worldToScreen(reveal.center)
             val radius = reveal.radius * scale * HALO_SPREAD
-            drawCircle(
-                brush = Brush.radialGradient(
-                    colors = listOf(
-                        MapStyle.LightHalo.copy(alpha = haze),
-                        MapStyle.LightHalo.copy(alpha = haze * 0.25f),
-                        Color.Transparent,
-                    ),
-                    center = center,
-                    radius = radius,
-                ),
-                radius = radius,
-                center = center,
-            )
+            val brush = brushes.haze(radius, haze)
+            translate(center.x, center.y) {
+                drawCircle(brush = brush, radius = radius, center = Offset.Zero)
+            }
         }
     }
 
@@ -379,57 +625,61 @@ private fun DrawScope.drawLitAreas(
 
     val canvas = drawContext.canvas
 
-    canvas.saveLayer(layerBounds, Paint())
+    canvas.saveLayer(layerBounds, cache.layerPaint)
 
     // Warm ground under the streets, so a lit area reads as illuminated rather
     // than as a hole cut in the dark.
     for (reveal in reveals) {
         val center = camera.worldToScreen(reveal.center)
         val radius = reveal.radius * scale
-        drawCircle(
-            brush = Brush.radialGradient(
-                colors = listOf(
-                    MapStyle.LightWash.copy(alpha = 0.15f),
-                    MapStyle.LightWash.copy(alpha = 0.06f),
-                    MapStyle.LightWash.copy(alpha = 0.02f),
-                ),
-                center = center,
-                radius = radius,
-            ),
-            radius = radius,
-            center = center,
-        )
+        val brush = brushes.wash(radius)
+        translate(center.x, center.y) {
+            drawCircle(brush = brush, radius = radius, center = Offset.Zero)
+        }
     }
 
     withTransform({
         translate(camera.offset.x, camera.offset.y)
         scale(scale, scale, pivot = Offset.Zero)
     }) {
-        drawLayers(paths, litExtent, lit = true, scale = scale)
+        drawLayers(paths, litExtent, lit = true, scale = scale, cache = cache, onlyReady = onlyReady)
     }
 
-    canvas.saveLayer(layerBounds, Paint().apply { blendMode = BlendMode.DstIn })
-    for (reveal in reveals) {
+    // One disc cannot overlap itself, so it can be punched straight into the
+    // layer above and the second offscreen buffer skipped entirely. That is the
+    // zoomed-into-one-place case, which is where the frame budget is tightest.
+    //
+    // It has to be drawn as a *rect* filled with the gradient, not as a circle.
+    // `DstIn` only touches the pixels the draw itself covers, so a circle would
+    // leave the corners of the layer — a fifth of it — at full brightness,
+    // which zoomed in is a square patch of lit streets around the disc. The
+    // gradient's last stop is transparent and it clamps beyond its radius, so
+    // filling the whole layer with it erases everything outside the disc.
+    if (reveals.size == 1) {
+        val reveal = reveals[0]
         val center = camera.worldToScreen(reveal.center)
         val radius = reveal.radius * scale
-        drawCircle(
-            brush = Brush.radialGradient(
-                // Solid to well past halfway, then feathered — a lit district
-                // with a soft edge, not a vignette that is only bright dead
-                // centre.
-                colorStops = arrayOf(
-                    0.0f to Color.White,
-                    MASK_SOLID_FRACTION to Color.White,
-                    1.0f to Color.Transparent,
-                ),
-                center = center,
-                radius = radius,
-            ),
-            radius = radius,
-            center = center,
-        )
+        val brush = brushes.mask(radius)
+        translate(center.x, center.y) {
+            drawRect(
+                brush = brush,
+                topLeft = Offset(layerBounds.left - center.x, layerBounds.top - center.y),
+                size = layerBounds.size,
+                blendMode = BlendMode.DstIn,
+            )
+        }
+    } else {
+        canvas.saveLayer(layerBounds, cache.maskPaint)
+        for (reveal in reveals) {
+            val center = camera.worldToScreen(reveal.center)
+            val radius = reveal.radius * scale
+            val brush = brushes.mask(radius)
+            translate(center.x, center.y) {
+                drawCircle(brush = brush, radius = radius, center = Offset.Zero)
+            }
+        }
+        canvas.restore()
     }
-    canvas.restore()
 
     canvas.restore()
 }
@@ -439,7 +689,10 @@ private fun DrawScope.drawLayers(
     visible: Rect,
     lit: Boolean,
     scale: Float,
+    cache: MapRenderCache,
+    onlyReady: Boolean,
 ) {
+    val coarse = cache.detail.coarse
     for (layer in MapStyle.layers) {
         if (scale < layer.minScale) continue
         val style = if (lit) layer.lit else layer.unlit
@@ -459,8 +712,7 @@ private fun DrawScope.drawLayers(
             )
         }
 
-        val coarse = scale < MapPaths.COARSE_MAX_SCALE
-        paths.forEachTile(layer.kind, visible, coarse) { path ->
+        paths.forEachTile(layer.kind, visible, coarse, onlyReady) { path ->
             if (fill != null) drawPath(path, color = fill)
             if (stroke != null && strokeStyle != null) {
                 drawPath(path, color = stroke, style = strokeStyle)
@@ -631,6 +883,18 @@ private const val BREATHING_MAX_SCALE = 4f
 
 /** Below about half a pixel a stroke stops being drawn at all. */
 private const val MIN_STROKE_PX = 0.6f
+
+/** How far either side of the level-of-detail switch the current level holds. */
+private const val DETAIL_HYSTERESIS = 1.15f
+
+/** Extra fraction of the viewport to build paths for, ahead of a pan. */
+private const val PREWARM_MARGIN = 0.35f
+
+/** Floor on how often the background path builder re-reads the camera. */
+private const val PREWARM_INTERVAL_MILLIS = 80L
+
+/** Large enough to contain any projected city, for whole-map prewarming. */
+private val WHOLE_WORLD = Rect(-1e6f, -1e6f, 1e6f, 1e6f)
 
 private val MAP_PADDING: Dp = 20.dp
 

@@ -3,11 +3,11 @@
 3    package="com.citymemory" >
 4
 5    <uses-sdk
-5-->/Users/mac/Documents/Mumbai/app/build/intermediates/tmp/manifest/test/debug/tempFile1ProcessTestManifest12165402944918606260.xml:5:5-74
+5-->/Users/mac/Documents/Mumbai/app/build/intermediates/tmp/manifest/test/debug/tempFile1ProcessTestManifest11019404652723708372.xml:5:5-74
 6        android:minSdkVersion="26"
-6-->/Users/mac/Documents/Mumbai/app/build/intermediates/tmp/manifest/test/debug/tempFile1ProcessTestManifest12165402944918606260.xml:5:15-41
+6-->/Users/mac/Documents/Mumbai/app/build/intermediates/tmp/manifest/test/debug/tempFile1ProcessTestManifest11019404652723708372.xml:5:15-41
 7        android:targetSdkVersion="35" />
-7-->/Users/mac/Documents/Mumbai/app/build/intermediates/tmp/manifest/test/debug/tempFile1ProcessTestManifest12165402944918606260.xml:5:42-71
+7-->/Users/mac/Documents/Mumbai/app/build/intermediates/tmp/manifest/test/debug/tempFile1ProcessTestManifest11019404652723708372.xml:5:42-71
 8
 9    <uses-permission android:name="android.permission.REORDER_TASKS" />
 9-->[androidx.test:core:1.6.1] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/c3d01bbf4218a14d18ea18ac4acf9b41/transformed/core-1.6.1/AndroidManifest.xml:24:5-72

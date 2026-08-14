@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.citymemory.ui.ExploreViewModelTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-08-14T09:41:35.309Z" hostname="macs-MacBook-Pro.local" time="0.121">
+<testsuite name="com.citymemory.ui.ExploreViewModelTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-08-14T13:07:03.105Z" hostname="macs-MacBook-Pro.local" time="0.125">
   <properties/>
-  <testcase name="toggling visited from the map lights the place and undoes cleanly" classname="com.citymemory.ui.ExploreViewModelTest" time="0.046"/>
+  <testcase name="toggling visited from the map lights the place and undoes cleanly" classname="com.citymemory.ui.ExploreViewModelTest" time="0.043"/>
   <testcase name="progress is derived from the same list the map draws" classname="com.citymemory.ui.ExploreViewModelTest" time="0.014"/>
-  <testcase name="initial state loads the city, its places and its geometry" classname="com.citymemory.ui.ExploreViewModelTest" time="0.014"/>
-  <testcase name="toggling wishlist from the map is reflected in progress" classname="com.citymemory.ui.ExploreViewModelTest" time="0.017"/>
-  <testcase name="selecting a place on the map exposes it, and dismissing clears it" classname="com.citymemory.ui.ExploreViewModelTest" time="0.014"/>
-  <testcase name="the selected place tracks its own state changes" classname="com.citymemory.ui.ExploreViewModelTest" time="0.016"/>
+  <testcase name="initial state loads the city, its places and its geometry" classname="com.citymemory.ui.ExploreViewModelTest" time="0.016"/>
+  <testcase name="toggling wishlist from the map is reflected in progress" classname="com.citymemory.ui.ExploreViewModelTest" time="0.018"/>
+  <testcase name="selecting a place on the map exposes it, and dismissing clears it" classname="com.citymemory.ui.ExploreViewModelTest" time="0.016"/>
+  <testcase name="the selected place tracks its own state changes" classname="com.citymemory.ui.ExploreViewModelTest" time="0.018"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

@@ -49,12 +49,38 @@ class MapCamera(scale: Float = MIN_SCALE, offset: Offset = Offset.Zero) {
         offset = constrain(zoomed + pan, next, viewport)
     }
 
+    /**
+     * Zooms to [target], keeping [focus] over the same ground.
+     *
+     * Relative about [focus] rather than absolute, so calling it repeatedly with
+     * interpolated values — which is what the animated double-tap does — pins
+     * that point for the whole animation instead of only at the ends.
+     */
+    fun zoomTo(target: Float, focus: Offset, viewport: Size) {
+        val next = target.coerceIn(MIN_SCALE, MAX_SCALE)
+        val zoomed = focus - (focus - offset) * (next / scale)
+        scale = next
+        offset = constrain(zoomed, next, viewport)
+    }
+
     /** Double-tap: dive to street level around [focus], or back out if already there. */
     fun toggleZoom(focus: Offset, viewport: Size) {
-        val target = if (scale < DETAIL_SCALE * 0.9f) DETAIL_SCALE else MIN_SCALE
-        val zoomed = focus - (focus - offset) * (target / scale)
-        scale = target
-        offset = constrain(zoomed, target, viewport)
+        zoomTo(targetForToggle(), focus, viewport)
+    }
+
+    /** Where a double-tap from the current zoom should land. */
+    fun targetForToggle(): Float = if (scale < DETAIL_SCALE * 0.9f) DETAIL_SCALE else MIN_SCALE
+
+    /**
+     * Slides the map by [delta], returning false once it will not move further.
+     *
+     * The return value is what stops a fling dead at the edge of the city
+     * rather than letting it run its decay out against the clamp.
+     */
+    fun panBy(delta: Offset, viewport: Size): Boolean {
+        val before = offset
+        offset = constrain(offset + delta, scale, viewport)
+        return offset != before
     }
 
     /** Frames [worldPoint] in the middle of the viewport at [targetScale]. */

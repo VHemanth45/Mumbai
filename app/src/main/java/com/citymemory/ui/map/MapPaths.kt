@@ -207,12 +207,42 @@ internal class MapPaths(
     /**
      * Runs [action] for every tile of [kind] that overlaps [visible], at the
      * level of detail appropriate to [coarse].
+     *
+     * With [onlyReady] set, tiles whose path has not been built yet are skipped
+     * instead of built. That is what the draw pass does while a gesture is in
+     * flight: building a tile of building footprints takes far longer than a
+     * frame, so doing it inside the pinch that revealed it drops the frame the
+     * user is actively looking at. [prewarm] builds them alongside, and they
+     * appear a frame or two later with the gesture still smooth.
      */
-    inline fun forEachTile(kind: ShapeKind, visible: Rect, coarse: Boolean, action: (Path) -> Unit) {
+    inline fun forEachTile(
+        kind: ShapeKind,
+        visible: Rect,
+        coarse: Boolean,
+        onlyReady: Boolean,
+        action: (Path) -> Unit,
+    ) {
         val tiles = tilesFor(kind) ?: return
         for (i in tiles.indices) {
             val tile = tiles[i]
-            if (tile.bounds.overlaps(visible)) action(pathOf(tile, coarse))
+            if (!tile.bounds.overlaps(visible)) continue
+            val path = if (onlyReady) tile.built(coarse) else pathOf(tile, coarse)
+            if (path != null) action(path)
+        }
+    }
+
+    /**
+     * Builds every path [forEachTile] would need for this view, without drawing.
+     *
+     * Safe off the main thread: [build] touches only flat arrays and a `Path`
+     * that nothing else can see until it is finished and published, so the draw
+     * pass either finds a complete path or finds none at all.
+     */
+    fun prewarm(kind: ShapeKind, visible: Rect, coarse: Boolean) {
+        val tiles = tilesFor(kind) ?: return
+        for (i in tiles.indices) {
+            val tile = tiles[i]
+            if (tile.bounds.overlaps(visible)) pathOf(tile, coarse)
         }
     }
 
@@ -221,8 +251,29 @@ internal class MapPaths(
     fun pathOf(tile: Tile, coarse: Boolean): Path = if (coarse) {
         tile.coarse ?: build(tile, COARSE_MIN_STEP).also { tile.coarse = it }
     } else {
-        tile.fine ?: build(tile, 0f).also { tile.fine = it }
+        tile.fine ?: build(tile, 0f).also {
+            tile.fine = it
+            retainFine(tile)
+        }
     }
+
+    /**
+     * Caps how many full-detail paths are kept alive, evicting oldest-first.
+     *
+     * Fine paths are the expensive ones — one tile of Mumbai's building
+     * footprints is tens of thousands of points — and panning across the city at
+     * full zoom would otherwise retain one for every tile crossed, on a heap
+     * that on a low-end device is under 128 MB in total. An evicted tile that is
+     * still on screen simply rebuilds; at this cap that is many screens away.
+     */
+    private fun retainFine(tile: Tile) {
+        synchronized(fineBuilt) {
+            fineBuilt.addLast(tile)
+            while (fineBuilt.size > MAX_FINE_TILES) fineBuilt.removeFirst().fine = null
+        }
+    }
+
+    private val fineBuilt = ArrayDeque<Tile>()
 
     /**
      * Builds one tile's geometry into a single [Path].
@@ -266,11 +317,16 @@ internal class MapPaths(
     }
 
     class Tile(val bounds: Rect, val shapes: IntArray) {
-        @JvmField
+        // Volatile because `prewarm` publishes these from a background thread
+        // and the draw pass reads them on the main one.
+        @Volatile
         internal var fine: Path? = null
 
-        @JvmField
+        @Volatile
         internal var coarse: Path? = null
+
+        /** The path at this level of detail, or null if it has not been built. */
+        fun built(coarse: Boolean): Path? = if (coarse) this.coarse else fine
     }
 
     /** A growable int list, to keep 77,000 shape indices out of `Integer` boxes. */
@@ -302,5 +358,12 @@ internal class MapPaths(
 
         /** Zoom at which the renderer switches from coarse paths to full detail. */
         const val COARSE_MAX_SCALE = 3f
+
+        /**
+         * How many full-detail tile paths stay resident. A screen holds a
+         * handful, so this is many screens of panning before anything on-screen
+         * could be evicted, while still bounding the heap.
+         */
+        private const val MAX_FINE_TILES = 128
     }
 }

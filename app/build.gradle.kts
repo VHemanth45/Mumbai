@@ -23,11 +23,19 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            // R8 is worth more here than on a typical app: Compose and Room both
+            // ship far more than this app calls, and the map's draw loop
+            // benefits from the inlining R8 does on top of the shrinking.
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+        }
+        debug {
+            // Kept off so the build stays fast and stack traces stay readable.
+            isMinifyEnabled = false
         }
     }
 
