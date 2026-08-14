@@ -1,0 +1,28 @@
+*.iml
+.gradle/
+/local.properties
+/.idea/
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+# Project-local toolchain: JDK 17, Android SDK, Gradle cache, emulator + AVD.
+# ~9 GB, of which ~6.5 GB is the emulator and its system image. Reproducible —
+# see README for how to rebuild it, or how to delete the emulator half.
+/.toolchain/
+
+# Pre-existing Python virtual environment
+/.venv/
+.kotlin/
+.gradle/
+
+# Map pipeline inputs and intermediates. The OSM extract is a 225 MB download
+# and the pickle is derived from it; both are reproducible from the README, and
+# only the 1.8 MB built asset (app/src/main/assets/mumbai.map) is committed.
+*.osm.pbf
+/.venv-osm/
+/build/osm-mumbai.pickle
+/build/extract.log

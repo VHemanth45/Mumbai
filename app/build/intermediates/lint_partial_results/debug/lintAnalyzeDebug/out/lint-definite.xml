@@ -1,0 +1,469 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<incidents format="6" by="lint 8.12.3" type="incidents">
+
+    <incident
+        id="OldTargetApi"
+        severity="warning"
+        message="Not targeting the latest versions of Android; compatibility modes apply. Consider testing and updating this version. Consult the `android.os.Build.VERSION_CODES` javadoc for details.">
+        <fix-replace
+            description="Update targetSdkVersion to 37"
+            oldString="35"
+            replacement="37"
+            priority="0"/>
+        <location
+            file="${:app*projectDir}/build.gradle.kts"
+            line="17"
+            column="9"
+            startOffset="366"
+            endLine="17"
+            endColumn="23"
+            endOffset="380"/>
+    </incident>
+
+    <incident
+        id="AndroidGradlePluginVersion"
+        severity="warning"
+        message="A newer version of Gradle than 8.14.3 is available: 8.14.5">
+        <fix-replace
+            description="Update to 8.14.5"
+            oldString="8.14.3"
+            replacement="8.14.5"
+            priority="0"/>
+        <location
+            file="$HOME/Documents/Mumbai/gradle/wrapper/gradle-wrapper.properties"
+            line="3"
+            column="17"
+            startOffset="81"
+            endLine="3"
+            endColumn="81"
+            endOffset="145"/>
+    </incident>
+
+    <incident
+        id="AndroidGradlePluginVersion"
+        severity="warning"
+        message="A newer version of com.android.application than 8.12.3 is available: 9.3.1">
+        <fix-replace
+            description="Replace with 9.3.1"
+            family="Update versions"
+            oldString="8.12.3"
+            replacement="9.3.1"
+            priority="0"/>
+        <location
+            file="$HOME/Documents/Mumbai/gradle/libs.versions.toml"
+            line="2"
+            column="7"
+            startOffset="17"
+            endLine="2"
+            endColumn="15"
+            endOffset="25"/>
+        <map>
+            <entry
+                name="coordinate"
+                string="com.android.application"/>
+            <entry
+                name="revision"
+                string="9.3.1"/>
+        </map>
+    </incident>
+
+    <incident
+        id="GradleDependency"
+        severity="warning"
+        message="A newer version of `compileSdkVersion` than 35 is available: 36">
+        <fix-replace
+            description="Set compileSdkVersion to 36"
+            oldString="35"
+            replacement="36"
+            priority="0"/>
+        <location
+            file="${:app*projectDir}/build.gradle.kts"
+            line="12"
+            column="5"
+            startOffset="260"
+            endLine="12"
+            endColumn="20"
+            endOffset="275"/>
+    </incident>
+
+    <incident
+        id="GradleDependency"
+        severity="warning"
+        message="A newer version of androidx.core:core-ktx than 1.16.0 is available: 1.19.0">
+        <fix-replace
+            description="Change to 1.19.0"
+            family="Update versions"
+            oldString="1.16.0"
+            replacement="1.19.0"
+            priority="0"/>
+        <location
+            file="$HOME/Documents/Mumbai/gradle/libs.versions.toml"
+            line="6"
+            column="11"
+            startOffset="76"
+            endLine="6"
+            endColumn="19"
+            endOffset="84"/>
+    </incident>
+
+    <incident
+        id="GradleDependency"
+        severity="warning"
+        message="A newer version of androidx.lifecycle:lifecycle-runtime-compose than 2.9.1 is available: 2.11.0">
+        <fix-replace
+            description="Change to 2.11.0"
+            family="Update versions"
+            oldString="2.9.1"
+            replacement="2.11.0"
+            priority="0"/>
+        <location
+            file="$HOME/Documents/Mumbai/gradle/libs.versions.toml"
+            line="7"
+            column="13"
+            startOffset="97"
+            endLine="7"
+            endColumn="20"
+            endOffset="104"/>
+    </incident>
+
+    <incident
+        id="GradleDependency"
+        severity="warning"
+        message="A newer version of androidx.lifecycle:lifecycle-runtime-ktx than 2.9.1 is available: 2.11.0">
+        <fix-replace
+            description="Change to 2.11.0"
+            family="Update versions"
+            oldString="2.9.1"
+            replacement="2.11.0"
+            priority="0"/>
+        <location
+            file="$HOME/Documents/Mumbai/gradle/libs.versions.toml"
+            line="7"
+            column="13"
+            startOffset="97"
+            endLine="7"
+            endColumn="20"
+            endOffset="104"/>
+    </incident>
+
+    <incident
+        id="GradleDependency"
+        severity="warning"
+        message="A newer version of androidx.lifecycle:lifecycle-viewmodel-compose than 2.9.1 is available: 2.11.0">
+        <fix-replace
+            description="Change to 2.11.0"
+            family="Update versions"
+            oldString="2.9.1"
+            replacement="2.11.0"
+            priority="0"/>
+        <location
+            file="$HOME/Documents/Mumbai/gradle/libs.versions.toml"
+            line="7"
+            column="13"
+            startOffset="97"
+            endLine="7"
+            endColumn="20"
+            endOffset="104"/>
+    </incident>
+
+    <incident
+        id="GradleDependency"
+        severity="warning"
+        message="A newer version of androidx.activity:activity-compose than 1.10.1 is available: 1.13.0">
+        <fix-replace
+            description="Change to 1.13.0"
+            family="Update versions"
+            oldString="1.10.1"
+            replacement="1.13.0"
+            priority="0"/>
+        <location
+            file="$HOME/Documents/Mumbai/gradle/libs.versions.toml"
+            line="8"
+            column="19"
+            startOffset="123"
+            endLine="8"
+            endColumn="27"
+            endOffset="131"/>
+    </incident>
+
+    <incident
+        id="GradleDependency"
+        severity="warning"
+        message="A newer version of androidx.compose:compose-bom than 2025.06.01 is available: 2026.08.00">
+        <fix-replace
+            description="Change to 2026.08.00"
+            family="Update versions"
+            oldString="2025.06.01"
+            replacement="2026.08.00"
+            priority="0"/>
+        <location
+            file="$HOME/Documents/Mumbai/gradle/libs.versions.toml"
+            line="9"
+            column="14"
+            startOffset="145"
+            endLine="9"
+            endColumn="26"
+            endOffset="157"/>
+    </incident>
+
+    <incident
+        id="GradleDependency"
+        severity="warning"
+        message="A newer version of androidx.navigation:navigation-compose than 2.8.9 is available: 2.9.8">
+        <fix-replace
+            description="Change to 2.9.8"
+            family="Update versions"
+            oldString="2.8.9"
+            replacement="2.9.8"
+            priority="0"/>
+        <location
+            file="$HOME/Documents/Mumbai/gradle/libs.versions.toml"
+            line="10"
+            column="21"
+            startOffset="178"
+            endLine="10"
+            endColumn="28"
+            endOffset="185"/>
+    </incident>
+
+    <incident
+        id="GradleDependency"
+        severity="warning"
+        message="A newer version of androidx.room:room-compiler than 2.7.2 is available: 2.8.4">
+        <fix-replace
+            description="Change to 2.8.4"
+            family="Update versions"
+            oldString="2.7.2"
+            replacement="2.8.4"
+            priority="0"/>
+        <location
+            file="$HOME/Documents/Mumbai/gradle/libs.versions.toml"
+            line="11"
+            column="8"
+            startOffset="193"
+            endLine="11"
+            endColumn="15"
+            endOffset="200"/>
+    </incident>
+
+    <incident
+        id="GradleDependency"
+        severity="warning"
+        message="A newer version of androidx.room:room-ktx than 2.7.2 is available: 2.8.4">
+        <fix-replace
+            description="Change to 2.8.4"
+            family="Update versions"
+            oldString="2.7.2"
+            replacement="2.8.4"
+            priority="0"/>
+        <location
+            file="$HOME/Documents/Mumbai/gradle/libs.versions.toml"
+            line="11"
+            column="8"
+            startOffset="193"
+            endLine="11"
+            endColumn="15"
+            endOffset="200"/>
+    </incident>
+
+    <incident
+        id="GradleDependency"
+        severity="warning"
+        message="A newer version of androidx.room:room-runtime than 2.7.2 is available: 2.8.4">
+        <fix-replace
+            description="Change to 2.8.4"
+            family="Update versions"
+            oldString="2.7.2"
+            replacement="2.8.4"
+            priority="0"/>
+        <location
+            file="$HOME/Documents/Mumbai/gradle/libs.versions.toml"
+            line="11"
+            column="8"
+            startOffset="193"
+            endLine="11"
+            endColumn="15"
+            endOffset="200"/>
+    </incident>
+
+    <incident
+        id="GradleDependency"
+        severity="warning"
+        message="A newer version of androidx.room:room-testing than 2.7.2 is available: 2.8.4">
+        <fix-replace
+            description="Change to 2.8.4"
+            family="Update versions"
+            oldString="2.7.2"
+            replacement="2.8.4"
+            priority="0"/>
+        <location
+            file="$HOME/Documents/Mumbai/gradle/libs.versions.toml"
+            line="11"
+            column="8"
+            startOffset="193"
+            endLine="11"
+            endColumn="15"
+            endOffset="200"/>
+    </incident>
+
+    <incident
+        id="GradleDependency"
+        severity="warning"
+        message="A newer version of androidx.test:core than 1.6.1 is available: 1.7.0">
+        <fix-replace
+            description="Change to 1.7.0"
+            family="Update versions"
+            oldString="1.6.1"
+            replacement="1.7.0"
+            priority="0"/>
+        <location
+            file="$HOME/Documents/Mumbai/gradle/libs.versions.toml"
+            line="16"
+            column="20"
+            startOffset="283"
+            endLine="16"
+            endColumn="27"
+            endOffset="290"/>
+    </incident>
+
+    <incident
+        id="GradleDependency"
+        severity="warning"
+        message="A newer version of androidx.test.ext:junit than 1.2.1 is available: 1.3.0">
+        <fix-replace
+            description="Change to 1.3.0"
+            family="Update versions"
+            oldString="1.2.1"
+            replacement="1.3.0"
+            priority="0"/>
+        <location
+            file="$HOME/Documents/Mumbai/gradle/libs.versions.toml"
+            line="17"
+            column="17"
+            startOffset="307"
+            endLine="17"
+            endColumn="24"
+            endOffset="314"/>
+    </incident>
+
+    <incident
+        id="GradleDependency"
+        severity="warning"
+        message="A newer version of androidx.test.espresso:espresso-core than 3.6.1 is available: 3.7.0">
+        <fix-replace
+            description="Change to 3.7.0"
+            family="Update versions"
+            oldString="3.6.1"
+            replacement="3.7.0"
+            priority="0"/>
+        <location
+            file="$HOME/Documents/Mumbai/gradle/libs.versions.toml"
+            line="18"
+            column="12"
+            startOffset="326"
+            endLine="18"
+            endColumn="19"
+            endOffset="333"/>
+    </incident>
+
+    <incident
+        id="NewerVersionAvailable"
+        severity="warning"
+        message="A newer version of org.jetbrains.kotlin.android than 2.1.21 is available: 2.4.10">
+        <fix-replace
+            description="Change to 2.4.10"
+            family="Update versions"
+            oldString="2.1.21"
+            replacement="2.4.10"
+            priority="0"/>
+        <location
+            file="$HOME/Documents/Mumbai/gradle/libs.versions.toml"
+            line="3"
+            column="10"
+            startOffset="35"
+            endLine="3"
+            endColumn="18"
+            endOffset="43"/>
+    </incident>
+
+    <incident
+        id="NewerVersionAvailable"
+        severity="warning"
+        message="A newer version of org.jetbrains.kotlin.plugin.compose than 2.1.21 is available: 2.4.10">
+        <fix-replace
+            description="Change to 2.4.10"
+            family="Update versions"
+            oldString="2.1.21"
+            replacement="2.4.10"
+            priority="0"/>
+        <location
+            file="$HOME/Documents/Mumbai/gradle/libs.versions.toml"
+            line="3"
+            column="10"
+            startOffset="35"
+            endLine="3"
+            endColumn="18"
+            endOffset="43"/>
+    </incident>
+
+    <incident
+        id="NewerVersionAvailable"
+        severity="warning"
+        message="A newer version of org.jetbrains.kotlinx:kotlinx-coroutines-android than 1.10.2 is available: 1.11.0">
+        <fix-replace
+            description="Change to 1.11.0"
+            family="Update versions"
+            oldString="1.10.2"
+            replacement="1.11.0"
+            priority="0"/>
+        <location
+            file="$HOME/Documents/Mumbai/gradle/libs.versions.toml"
+            line="12"
+            column="14"
+            startOffset="214"
+            endLine="12"
+            endColumn="22"
+            endOffset="222"/>
+    </incident>
+
+    <incident
+        id="NewerVersionAvailable"
+        severity="warning"
+        message="A newer version of org.jetbrains.kotlinx:kotlinx-coroutines-test than 1.10.2 is available: 1.11.0">
+        <fix-replace
+            description="Change to 1.11.0"
+            family="Update versions"
+            oldString="1.10.2"
+            replacement="1.11.0"
+            priority="0"/>
+        <location
+            file="$HOME/Documents/Mumbai/gradle/libs.versions.toml"
+            line="12"
+            column="14"
+            startOffset="214"
+            endLine="12"
+            endColumn="22"
+            endOffset="222"/>
+    </incident>
+
+    <incident
+        id="NewerVersionAvailable"
+        severity="warning"
+        message="A newer version of org.robolectric:robolectric than 4.14.1 is available: 4.16.1">
+        <fix-replace
+            description="Change to 4.16.1"
+            family="Update versions"
+            oldString="4.14.1"
+            replacement="4.16.1"
+            priority="0"/>
+        <location
+            file="$HOME/Documents/Mumbai/gradle/libs.versions.toml"
+            line="15"
+            column="15"
+            startOffset="255"
+            endLine="15"
+            endColumn="23"
+            endOffset="263"/>
+    </incident>
+
+</incidents>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.citymemory.data.PlaceRepositoryTest" tests="13" skipped="0" failures="0" errors="0" timestamp="2026-08-14T09:41:34.793Z" hostname="macs-MacBook-Pro.local" time="0.509">
+  <properties/>
+  <testcase name="places start neither visited nor wishlisted" classname="com.citymemory.data.PlaceRepositoryTest" time="0.021"/>
+  <testcase name="wishlist and visited are independent" classname="com.citymemory.data.PlaceRepositoryTest" time="0.03"/>
+  <testcase name="every category in the enum is represented in the seed" classname="com.citymemory.data.PlaceRepositoryTest" time="0.017"/>
+  <testcase name="seeding is idempotent across repeated reads" classname="com.citymemory.data.PlaceRepositoryTest" time="0.025"/>
+  <testcase name="first read seeds the full mumbai catalog" classname="com.citymemory.data.PlaceRepositoryTest" time="0.016"/>
+  <testcase name="state row is dropped once a place is neither visited nor wishlisted" classname="com.citymemory.data.PlaceRepositoryTest" time="0.013"/>
+  <testcase name="marking visited persists the flag and the timestamp" classname="com.citymemory.data.PlaceRepositoryTest" time="0.017"/>
+  <testcase name="undoing a visit clears both the flag and the timestamp" classname="com.citymemory.data.PlaceRepositoryTest" time="0.015"/>
+  <testcase name="observePlaces re-emits when a place is marked visited" classname="com.citymemory.data.PlaceRepositoryTest" time="0.28"/>
+  <testcase name="observeCity returns the seeded city" classname="com.citymemory.data.PlaceRepositoryTest" time="0.019"/>
+  <testcase name="re-marking a visited place keeps the original timestamp" classname="com.citymemory.data.PlaceRepositoryTest" time="0.017"/>
+  <testcase name="observePlace tracks a single place" classname="com.citymemory.data.PlaceRepositoryTest" time="0.019"/>
+  <testcase name="clearing one flag keeps the row while the other is still set" classname="com.citymemory.data.PlaceRepositoryTest" time="0.019"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
