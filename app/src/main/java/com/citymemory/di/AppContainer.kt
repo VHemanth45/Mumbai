@@ -2,12 +2,17 @@ package com.citymemory.di
 
 import android.content.Context
 import com.citymemory.data.local.database.CityMemoryDatabase
+import com.citymemory.data.local.seed.AssetPlaceCatalog
 import com.citymemory.data.local.seed.DatabaseSeeder
 import com.citymemory.data.map.OsmCityGeometryProvider
+import com.citymemory.data.photo.FilePhotoStore
+import com.citymemory.data.photo.PhotoStore
 import com.citymemory.data.repository.PlaceRepositoryImpl
 import com.citymemory.domain.repository.CityGeometryProvider
 import com.citymemory.domain.repository.PlaceRepository
+import com.citymemory.util.AndroidLocationSource
 import com.citymemory.util.AndroidNavigationLauncher
+import com.citymemory.util.LocationSource
 import com.citymemory.util.NavigationLauncher
 
 /**
@@ -27,11 +32,16 @@ class AppContainer(context: Context) {
     }
 
     private val seeder: DatabaseSeeder by lazy {
-        DatabaseSeeder(database)
+        DatabaseSeeder(database, AssetPlaceCatalog(applicationContext.assets))
+    }
+
+    /** Copies photos into app storage so they outlive the picker's grant. */
+    private val photoStore: PhotoStore by lazy {
+        FilePhotoStore(applicationContext)
     }
 
     val placeRepository: PlaceRepository by lazy {
-        PlaceRepositoryImpl(database, seeder)
+        PlaceRepositoryImpl(database, seeder, photoStore)
     }
 
     /**
@@ -44,5 +54,13 @@ class AppContainer(context: Context) {
 
     val navigationLauncher: NavigationLauncher by lazy {
         AndroidNavigationLauncher()
+    }
+
+    /**
+     * The platform GPS, for "use my location" when adding a place. An interface
+     * so the add flow can be tested with a fake fix and no device.
+     */
+    val locationSource: LocationSource by lazy {
+        AndroidLocationSource()
     }
 }

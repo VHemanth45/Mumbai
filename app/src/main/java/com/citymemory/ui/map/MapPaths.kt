@@ -13,7 +13,7 @@ import kotlin.math.max
  * sixty-point outline and all of which appear at once with real OpenStreetMap
  * data:
  *
- * **Traversal.** Mumbai is ~387,000 points. A single `Path` per kind means Skia
+ * **Traversal.** Mumbai is ~867,000 points. A single `Path` per kind means Skia
  * walks every residential street in the city to draw the four you can see at
  * full zoom. Shapes are bucketed into a coarse grid, and the renderer only
  * touches the tiles that intersect the viewport.
@@ -78,7 +78,7 @@ internal class MapPaths(
         val kindOrdinal = IntArray(n)
 
         // The projection is unrolled rather than calling through `project()`
-        // per point. This loop runs 387,000 times exactly once, which is the
+        // per point. This loop runs 867,000 times exactly once, which is the
         // worst case for a JIT — it stays largely interpreted, so the constant
         // factor of each iteration is what the user actually waits for.
         val originX = projector.originX
@@ -158,7 +158,7 @@ internal class MapPaths(
 
         val cells = TILE_COLS * TILE_ROWS
         // Flat arrays keyed by kind * cells + cell. A HashMap here would box
-        // every one of the 77,000 shape indices it stores.
+        // every one of the 149,000 shape indices it stores.
         val members = arrayOfNulls<IntList>(kindCount * cells)
         val bounds = FloatArray(kindCount * cells * 4)
 
@@ -329,7 +329,7 @@ internal class MapPaths(
         fun built(coarse: Boolean): Path? = if (coarse) this.coarse else fine
     }
 
-    /** A growable int list, to keep 77,000 shape indices out of `Integer` boxes. */
+    /** A growable int list, to keep 149,000 shape indices out of `Integer` boxes. */
     private class IntList {
         private var data = IntArray(16)
         private var size = 0
@@ -343,11 +343,19 @@ internal class MapPaths(
     }
 
     companion object {
-        // 12 x 12 over a city the size of Mumbai is ~4 km a side: small enough
+        // 16 x 16 over a city the size of Mumbai is ~3 km a side: small enough
         // that a deep zoom touches one or two tiles, large enough that the
-        // overview still only iterates a couple of hundred of them.
-        private const val TILE_COLS = 12
-        private const val TILE_ROWS = 12
+        // overview still only iterates a few hundred of them.
+        //
+        // Was 12 x 12, sized when the asset held 94,000 shapes. It now holds
+        // 149,000, of which 73,000 are building footprints — nearly three times
+        // as many as before, because detail geometry is kept near every place
+        // in the catalog and the catalog went from 177 places to 3,191. Tiles
+        // are built one at a time, on demand, so what matters is the cost of
+        // the single most expensive tile; 256 cells puts that back roughly
+        // where it was when it was measured.
+        private const val TILE_COLS = 16
+        private const val TILE_ROWS = 16
 
         /**
          * Decimation distance for the coarse level, in scale-1 pixels. Below

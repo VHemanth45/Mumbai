@@ -1,9 +1,9 @@
 -- Merging decision tree log ---
 manifest
-ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:2:1-53:12
-INJECTED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:2:1-53:12
-INJECTED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:2:1-53:12
-INJECTED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:2:1-53:12
+ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:2:1-72:12
+INJECTED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:2:1-72:12
+INJECTED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:2:1-72:12
+INJECTED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:2:1-72:12
 MERGED from [androidx.navigation:navigation-common:2.8.9] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/bffa05b4d69644ff0d0eb424a733db28/transformed/navigation-common-2.8.9/AndroidManifest.xml:17:1-22:12
 MERGED from [androidx.navigation:navigation-runtime:2.8.9] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/7e638428f0014afa44381f97f8debcad/transformed/navigation-runtime-2.8.9/AndroidManifest.xml:17:1-22:12
 MERGED from [androidx.navigation:navigation-common-ktx:2.8.9] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/157041ac5723970e057fb59828d2639d/transformed/navigation-common-ktx-2.8.9/AndroidManifest.xml:2:1-7:12
@@ -66,23 +66,37 @@ MERGED from [androidx.arch.core:core-runtime:2.2.0] /Users/mac/Documents/Mumbai/
 		INJECTED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml
 	xmlns:android
 		ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:2:11-69
-queries
-ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:9:5-19:15
-intent#action:name:android.intent.action.VIEW+data:scheme:geo
-ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:11:9-14:18
-action#android.intent.action.VIEW
-ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:12:13-65
+uses-permission#android.permission.ACCESS_FINE_LOCATION
+ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:20:5-79
 	android:name
-		ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:12:21-62
+		ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:20:22-76
+uses-permission#android.permission.ACCESS_COARSE_LOCATION
+ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:21:5-81
+	android:name
+		ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:21:22-78
+uses-feature#android.hardware.location.gps
+ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:24:5-26:36
+	android:required
+		ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:26:9-33
+	android:name
+		ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:25:9-53
+queries
+ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:28:5-38:15
+intent#action:name:android.intent.action.VIEW+data:scheme:geo
+ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:30:9-33:18
+action#android.intent.action.VIEW
+ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:31:13-65
+	android:name
+		ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:31:21-62
 data
-ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:13:13-42
+ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:32:13-42
 	android:scheme
-		ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:13:19-39
+		ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:32:19-39
 intent#action:name:android.intent.action.VIEW+data:scheme:https
-ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:15:9-18:18
+ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:34:9-37:18
 application
-ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:21:5-51:19
-INJECTED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:21:5-51:19
+ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:40:5-70:19
+INJECTED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:40:5-70:19
 MERGED from [androidx.emoji2:emoji2:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/5b56a18e8f3d11c95a6c15eaea66d772/transformed/emoji2-1.4.0/AndroidManifest.xml:23:5-33:19
 MERGED from [androidx.emoji2:emoji2:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/5b56a18e8f3d11c95a6c15eaea66d772/transformed/emoji2-1.4.0/AndroidManifest.xml:23:5-33:19
 MERGED from [androidx.core:core:1.16.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/f90db1c0f985a3814bfe4daad56cccb0/transformed/core-1.16.0/AndroidManifest.xml:28:5-89
@@ -102,47 +116,47 @@ MERGED from [androidx.startup:startup-runtime:1.1.1] /Users/mac/Documents/Mumbai
 	android:appComponentFactory
 		ADDED from [androidx.core:core:1.16.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/f90db1c0f985a3814bfe4daad56cccb0/transformed/core-1.16.0/AndroidManifest.xml:28:18-86
 	android:supportsRtl
-		ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:29:9-35
+		ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:48:9-35
 	android:label
-		ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:27:9-41
+		ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:46:9-41
 	android:fullBackupContent
-		ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:25:9-54
+		ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:44:9-54
 	android:roundIcon
-		ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:28:9-54
+		ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:47:9-54
 	android:icon
-		ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:26:9-43
+		ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:45:9-43
 	android:allowBackup
-		ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:23:9-35
+		ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:42:9-35
 	android:theme
-		ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:30:9-48
+		ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:49:9-48
 	android:dataExtractionRules
-		ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:24:9-65
+		ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:43:9-65
 	android:name
-		ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:22:9-46
+		ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:41:9-46
 activity#com.citymemory.MainActivity
-ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:39:9-50:20
+ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:58:9-69:20
 	android:windowSoftInputMode
-		ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:45:13-55
+		ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:64:13-55
 	android:exported
-		ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:42:13-36
+		ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:61:13-36
 	android:resizeableActivity
-		ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:43:13-46
+		ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:62:13-46
 	android:configChanges
-		ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:41:13-154
+		ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:60:13-154
 	android:theme
-		ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:44:13-52
+		ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:63:13-52
 	android:name
-		ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:40:13-41
+		ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:59:13-41
 intent-filter#action:name:android.intent.action.MAIN+category:name:android.intent.category.LAUNCHER
-ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:46:13-49:29
+ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:65:13-68:29
 action#android.intent.action.MAIN
-ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:47:17-69
+ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:66:17-69
 	android:name
-		ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:47:25-66
+		ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:66:25-66
 category#android.intent.category.LAUNCHER
-ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:48:17-77
+ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:67:17-77
 	android:name
-		ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:48:27-74
+		ADDED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:67:27-74
 uses-sdk
 INJECTED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml reason: use-sdk injection requested
 INJECTED from /Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml

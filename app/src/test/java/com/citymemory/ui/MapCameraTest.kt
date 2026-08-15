@@ -4,6 +4,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import com.citymemory.ui.map.MapCamera
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -22,6 +23,38 @@ class MapCameraTest {
 
         assertEquals(MapCamera.MIN_SCALE, camera.scale, 0f)
         assertEquals(Offset.Zero, camera.offset)
+    }
+
+    /**
+     * The reason `CityMapView` zooms in when a place is being positioned.
+     *
+     * At MIN_SCALE the projected city exactly fills the viewport, so `constrain`
+     * clamps the offset to zero in both axes and the map does not move at all.
+     * Anything reading "the coordinate under the middle of the screen" therefore
+     * reads the same coordinate forever — which is how every place added from
+     * the overview came out at identical latitude and longitude.
+     */
+    @Test
+    fun `the overview cannot pan, which is why picking a location zooms first`() {
+        val camera = MapCamera()
+
+        val moved = camera.panBy(Offset(-400f, -600f), viewport)
+
+        assertFalse("the overview reported movement it cannot make", moved)
+        assertEquals(Offset.Zero, camera.offset)
+    }
+
+    @Test
+    fun `zoomed in for picking, the map pans and the anchor moves with it`() {
+        val camera = MapCamera()
+        camera.zoomTo(14f, Offset(540f, 770f), viewport)
+        val before = camera.screenToWorld(Offset(540f, 770f))
+
+        val moved = camera.panBy(Offset(-400f, -600f), viewport)
+
+        assertTrue("a zoomed camera has somewhere to pan to", moved)
+        val after = camera.screenToWorld(Offset(540f, 770f))
+        assertTrue("the point under the ring should have changed", before != after)
     }
 
     @Test

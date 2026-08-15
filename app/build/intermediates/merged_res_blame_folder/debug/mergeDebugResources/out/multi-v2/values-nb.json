@@ -4,24 +4,7 @@
             "outputFile": "com.citymemory.app-mergeDebugResources-56:/values-nb/values-nb.xml",
             "map": [
                 {
-                    "source": "/Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/d61974d9cb165b3ef03d8a26497aaf90/transformed/ui-release/res/values-nb/values-nb.xml",
-                    "from": {
-                        "startLines": "3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21",
-                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
-                        "startOffsets": "181,274,355,452,552,640,716,804,893,975,1055,1137,1207,1292,1366,1437,1507,1584,1651",
-                        "endColumns": "92,80,96,99,87,75,87,88,81,79,81,69,84,73,70,69,76,66,119",
-                        "endOffsets": "269,350,447,547,635,711,799,888,970,1050,1132,1202,1287,1361,1432,1502,1579,1646,1766"
-                    },
-                    "to": {
-                        "startLines": "10,11,12,13,14,15,16,75,76,77,78,79,80,81,82,83,85,86,87",
-                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
-                        "startOffsets": "906,999,1080,1177,1277,1365,1441,7758,7847,7929,8009,8091,8161,8246,8320,8391,8562,8639,8706",
-                        "endColumns": "92,80,96,99,87,75,87,88,81,79,81,69,84,73,70,69,76,66,119",
-                        "endOffsets": "994,1075,1172,1272,1360,1436,1524,7842,7924,8004,8086,8156,8241,8315,8386,8456,8634,8701,8821"
-                    }
-                },
-                {
-                    "source": "/Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/62f6a5b1cdab307e61a02855816e6949/transformed/material3-release/res/values-nb/values-nb.xml",
+                    "source": "/Users/mac/.gradle/caches/8.14.3/transforms/62f6a5b1cdab307e61a02855816e6949/transformed/material3-release/res/values-nb/values-nb.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
@@ -38,7 +21,24 @@
                     }
                 },
                 {
-                    "source": "/Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/f90db1c0f985a3814bfe4daad56cccb0/transformed/core-1.16.0/res/values-nb/values-nb.xml",
+                    "source": "/Users/mac/.gradle/caches/8.14.3/transforms/e6521123a413508f3ab8741bac178299/transformed/material-release/res/values-nb/values-nb.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "88",
+                        "endOffsets": "139"
+                    },
+                    "to": {
+                        "startLines": "74",
+                        "startColumns": "4",
+                        "startOffsets": "7669",
+                        "endColumns": "88",
+                        "endOffsets": "7753"
+                    }
+                },
+                {
+                    "source": "/Users/mac/.gradle/caches/8.14.3/transforms/f90db1c0f985a3814bfe4daad56cccb0/transformed/core-1.16.0/res/values-nb/values-nb.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9",
                         "startColumns": "4,4,4,4,4,4,4,4",
@@ -55,7 +55,24 @@
                     }
                 },
                 {
-                    "source": "/Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/b1330636d3999151671ce3ae4e6aafc3/transformed/foundation-release/res/values-nb/values-nb.xml",
+                    "source": "/Users/mac/.gradle/caches/8.14.3/transforms/d61974d9cb165b3ef03d8a26497aaf90/transformed/ui-release/res/values-nb/values-nb.xml",
+                    "from": {
+                        "startLines": "3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21",
+                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
+                        "startOffsets": "181,274,355,452,552,640,716,804,893,975,1055,1137,1207,1292,1366,1437,1507,1584,1651",
+                        "endColumns": "92,80,96,99,87,75,87,88,81,79,81,69,84,73,70,69,76,66,119",
+                        "endOffsets": "269,350,447,547,635,711,799,888,970,1050,1132,1202,1287,1361,1432,1502,1579,1646,1766"
+                    },
+                    "to": {
+                        "startLines": "10,11,12,13,14,15,16,75,76,77,78,79,80,81,82,83,85,86,87",
+                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
+                        "startOffsets": "906,999,1080,1177,1277,1365,1441,7758,7847,7929,8009,8091,8161,8246,8320,8391,8562,8639,8706",
+                        "endColumns": "92,80,96,99,87,75,87,88,81,79,81,69,84,73,70,69,76,66,119",
+                        "endOffsets": "994,1075,1172,1272,1360,1436,1524,7842,7924,8004,8086,8156,8241,8315,8386,8456,8634,8701,8821"
+                    }
+                },
+                {
+                    "source": "/Users/mac/.gradle/caches/8.14.3/transforms/b1330636d3999151671ce3ae4e6aafc3/transformed/foundation-release/res/values-nb/values-nb.xml",
                     "from": {
                         "startLines": "2,3,4",
                         "startColumns": "4,4,4",
@@ -69,23 +86,6 @@
                         "startOffsets": "105,8826,8916",
                         "endColumns": "74,89,87",
                         "endOffsets": "175,8911,8999"
-                    }
-                },
-                {
-                    "source": "/Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/e6521123a413508f3ab8741bac178299/transformed/material-release/res/values-nb/values-nb.xml",
-                    "from": {
-                        "startLines": "2",
-                        "startColumns": "4",
-                        "startOffsets": "55",
-                        "endColumns": "88",
-                        "endOffsets": "139"
-                    },
-                    "to": {
-                        "startLines": "74",
-                        "startColumns": "4",
-                        "startOffsets": "7669",
-                        "endColumns": "88",
-                        "endOffsets": "7753"
                     }
                 }
             ]

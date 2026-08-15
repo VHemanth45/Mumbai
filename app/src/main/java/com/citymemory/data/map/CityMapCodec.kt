@@ -12,8 +12,8 @@ import java.io.InputStream
  *
  * The format is deliberately tiny and dumb — no compression beyond delta +
  * varint coding, no indexes, no strings — because the whole point is that it
- * decodes in one linear pass with no allocation per point. Mumbai is ~387,000
- * points in 1.8 MB, which lands as flat `DoubleArray`s rather than 387,000
+ * decodes in one linear pass with no allocation per point. Mumbai is ~867,000
+ * points in 3.6 MB, which lands as flat `DoubleArray`s rather than 867,000
  * boxed objects.
  *
  * Layout (little-endian where fixed width, LEB128 where varint):

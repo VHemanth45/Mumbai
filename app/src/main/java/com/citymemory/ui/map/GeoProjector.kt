@@ -30,7 +30,7 @@ class GeoProjector(
      *
      * Exposed, along with [originX], [originY], [minLongitude] and
      * [maxLatitude], so [MapPaths] can inline this projection into its one hot
-     * loop over ~387,000 points rather than calling through [project] for each.
+     * loop over ~867,000 points rather than calling through [project] for each.
      */
     val longitudeScale: Double =
         cos((bounds.minLatitude + bounds.maxLatitude) / 2.0 * PI / 180.0).coerceAtLeast(0.01)
@@ -75,6 +75,19 @@ class GeoProjector(
     fun project(latitude: Double, longitude: Double): Offset = Offset(
         x = originX + ((longitude - bounds.minLongitude) * longitudeScale * scale).toFloat(),
         y = originY + ((bounds.maxLatitude - latitude) * scale).toFloat(),
+    )
+
+    /**
+     * The exact inverse of [project]: world pixels back to a coordinate.
+     *
+     * This is what lets a place be added at a spot on the map rather than by
+     * typing numbers. The caller turns a screen point into world space through
+     * the camera first — [MapCamera.screenToWorld] — because zoom and pan are a
+     * transform on top of this projection, not part of it.
+     */
+    fun unproject(world: Offset): GeoPoint = GeoPoint(
+        latitude = bounds.maxLatitude - (world.y - originY) / scale,
+        longitude = bounds.minLongitude + (world.x - originX) / (longitudeScale * scale),
     )
 
     private companion object {

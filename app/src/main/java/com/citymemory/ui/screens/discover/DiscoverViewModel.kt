@@ -96,9 +96,9 @@ class DiscoverViewModel(
 
         /**
          * Filtering runs in memory over the full catalog rather than in SQL.
-         * At 80 places that is instantaneous and keeps every screen fed by the
-         * one observePlaces stream; a city with tens of thousands of places
-         * would want this pushed down into a query instead.
+         * At 3,191 places that is still a few milliseconds and keeps every
+         * screen fed by the one observePlaces stream; a city with tens of
+         * thousands would want this pushed down into a query instead.
          */
         private fun List<Place>.applyFilters(
             query: String,
@@ -116,9 +116,13 @@ class DiscoverViewModel(
                         DiscoverFilter.WISHLIST -> it.isWishlisted
                     }
                 }
+                // Address included, because the catalog carries every mapped
+                // place in Mumbai: "Starbucks" matches thirty-two rows and
+                // "Starbucks Bandra" is how you say which one you mean.
                 .filter {
                     trimmed.isEmpty() ||
                         it.name.contains(trimmed, ignoreCase = true) ||
+                        it.address?.contains(trimmed, ignoreCase = true) == true ||
                         it.description.contains(trimmed, ignoreCase = true) ||
                         it.category.displayName.contains(trimmed, ignoreCase = true)
                 }

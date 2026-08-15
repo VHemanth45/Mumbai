@@ -1,5 +1,6 @@
 package com.citymemory.ui
 
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import com.citymemory.data.map.MockMumbaiGeometryProvider
 import com.citymemory.domain.model.GeoBounds
@@ -92,6 +93,40 @@ class GeoProjectorTest {
         assertEquals(expectedRatio, width / height, 0.01f)
     }
 
+    /**
+     * Adding a place puts a coordinate back out of a screen position, so the
+     * inverse has to be right to well under the width of a street — a pin that
+     * lands on the far pavement is a pin on the wrong place.
+     *
+     * The tolerance is a hundredth of a second of arc, about 11 cm here, and it
+     * is bounded by [androidx.compose.ui.geometry.Offset] holding floats rather
+     * than by the arithmetic: a round trip through a `Float` pixel cannot carry
+     * more precision than the pixel has. That is far below anything the map can
+     * express — at full zoom a pixel is about 0.8 m of ground.
+     */
+    @Test
+    fun `unproject inverts project to well under a metre`() {
+        val projector = GeoProjector(bounds, Size(1080f, 1920f), padding = 24f)
+
+        for (point in PROBE_POINTS) {
+            val roundTripped = projector.unproject(projector.project(point))
+
+            assertEquals(point.latitude, roundTripped.latitude, 1e-6)
+            assertEquals(point.longitude, roundTripped.longitude, 1e-6)
+        }
+    }
+
+    @Test
+    fun `unproject reads the middle of the canvas as the middle of the bounds`() {
+        val size = Size(1000f, 1000f)
+        val projector = GeoProjector(bounds, size)
+
+        val middle = projector.unproject(Offset(size.width / 2f, size.height / 2f))
+
+        assertEquals(19.0, middle.latitude, 1e-6)
+        assertEquals(73.0, middle.longitude, 1e-6)
+    }
+
     @Test
     fun `degenerate size does not blow up`() {
         val projector = GeoProjector(bounds, Size(0f, 0f))
@@ -105,7 +140,7 @@ class GeoProjectorTest {
     @Test
     fun `every seeded mumbai place lands inside the mock geometry bounds`() = runBlocking {
         val geometry = MockMumbaiGeometryProvider().geometryFor("mumbai")
-        val places = com.citymemory.data.local.seed.MumbaiSeed.places
+        val places = com.citymemory.SeedPlaces.all
 
         val outOfBounds = places.filterNot { place ->
             place.latitude in geometry.bounds.minLatitude..geometry.bounds.maxLatitude &&
@@ -142,5 +177,16 @@ class GeoProjectorTest {
         val geometry = MockMumbaiGeometryProvider().geometryFor("paris")
 
         assertTrue(geometry.shapes.isEmpty())
+    }
+
+    private companion object {
+        /** Corners, edges and the middle — where an off-by-one origin shows up. */
+        val PROBE_POINTS = listOf(
+            GeoPoint(18.0, 72.0),
+            GeoPoint(20.0, 74.0),
+            GeoPoint(19.0, 73.0),
+            GeoPoint(18.9220, 72.8347),
+            GeoPoint(19.2622, 72.9729),
+        )
     }
 }

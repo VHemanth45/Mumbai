@@ -46,9 +46,9 @@ MIN_LNG, MAX_LNG = 72.750, 73.010
 
 # How far around a place the map is allowed to light up. Detail geometry is
 # only kept inside this radius. Must stay >= the renderer's reveal radius.
-DETAIL_RADIUS_M = 520.0
+DETAIL_RADIUS_M = 440.0
 
-SEED_KT = Path("app/src/main/java/com/citymemory/data/local/seed/MumbaiSeed.kt")
+CATALOG = Path("app/src/main/assets/mumbai-places.tsv")
 
 # --------------------------------------------------------------------------
 # Classification
@@ -166,13 +166,25 @@ def classify(tags) -> int | None:
 # --------------------------------------------------------------------------
 
 def load_places() -> list[tuple[float, float]]:
-    src = SEED_KT.read_text()
-    pts = re.findall(
-        r"PlaceCategory\.[A-Z_]+,\s*([0-9]+\.[0-9]+),\s*([0-9]+\.[0-9]+)", src
-    )
+    """
+    The catalog's coordinates, which decide where detail geometry is kept.
+
+    Read from the shipped asset rather than from `MumbaiSeed.kt`, which is where
+    the catalog used to live — see `build_seed.write_catalog` for why it moved.
+    Two header lines, then `id category name lat lon address description`.
+    """
+    lines = CATALOG.read_text(encoding="utf-8").splitlines()
+    if not lines or not lines[0].startswith("CMPL\t"):
+        raise SystemExit(f"{CATALOG} is not a place catalog — run tools/build_seed.py")
+    pts = []
+    for line in lines[2:]:
+        if not line.strip():
+            continue
+        fields = line.split("\t")
+        pts.append((float(fields[3]), float(fields[4])))
     if not pts:
-        raise SystemExit(f"no places parsed out of {SEED_KT}")
-    return [(float(a), float(b)) for a, b in pts]
+        raise SystemExit(f"no places parsed out of {CATALOG}")
+    return pts
 
 
 class ProximityGrid:

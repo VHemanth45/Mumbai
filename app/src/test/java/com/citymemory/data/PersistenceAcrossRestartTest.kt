@@ -4,11 +4,13 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.citymemory.data.local.database.CityMemoryDatabase
 import com.citymemory.data.local.seed.DatabaseSeeder
+import com.citymemory.SeedPlaces
 import com.citymemory.data.local.seed.MumbaiSeed
 import com.citymemory.data.repository.PlaceRepositoryImpl
 import com.citymemory.domain.ExplorationSummarizer
 import com.citymemory.domain.model.AchievementId
 import com.citymemory.domain.model.ExplorerLevel
+import com.citymemory.domain.model.PlaceCategory
 import com.citymemory.domain.repository.PlaceRepository
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -53,7 +55,7 @@ class PersistenceAcrossRestartTest {
         openDatabase?.close()
         val database = CityMemoryDatabase.build(context)
         openDatabase = database
-        return PlaceRepositoryImpl(database, DatabaseSeeder(database))
+        return PlaceRepositoryImpl(database, DatabaseSeeder(database, SeedPlaces.catalog))
     }
 
     @Test
@@ -62,27 +64,28 @@ class PersistenceAcrossRestartTest {
         val firstRun = relaunchApp()
         firstRun.observePlaces(MumbaiSeed.CITY_ID).first() // triggers the seed
 
-        val visitedIds = listOf(
-            "gateway-of-india", "marine-drive", "cst", "haji-ali", "juhu-beach",
-            "leopold-cafe", "britannia-and-co", "shivaji-park", "csmvs", "banganga-tank",
-        )
+        // Ten tourist places, so the Tourist achievement is earned and the
+        // Foodie one is not — the ids come from the generated seed rather than
+        // being typed, so regenerating the dataset cannot break this.
+        val visitedIds = SeedPlaces.ids(PlaceCategory.TOURIST, 10)
         visitedIds.forEach { firstRun.setVisited(it, true) }
 
-        val wishlistedIds = listOf("elephanta-caves", "kanheri-caves", "sewri-jetty")
+        val wishlistedIds = SeedPlaces.ids(PlaceCategory.CULTURE, 3)
         wishlistedIds.forEach { firstRun.setWishlisted(it, true) }
 
         val before = firstRun.observePlaces(MumbaiSeed.CITY_ID).first()
         val progressBefore = ExplorationSummarizer.progressOf(before)
         assertEquals(10, progressBefore.visitedCount)
         assertEquals(3, progressBefore.wishlistCount)
-        assertEquals(12, progressBefore.percent)
+        // Levels are counted in places visited, not in percent, so this one
+        // does not move when the catalog is regenerated at a different size.
         assertEquals(ExplorerLevel.EXPLORER, progressBefore.level)
 
         // --- Session two: same database file, brand new objects. ---
         val secondRun = relaunchApp()
         val after = secondRun.observePlaces(MumbaiSeed.CITY_ID).first()
 
-        assertEquals(80, after.size)
+        assertEquals(SeedPlaces.total, after.size)
         assertEquals(visitedIds.toSet(), after.filter { it.isVisited }.map { it.id }.toSet())
         assertEquals(wishlistedIds.toSet(), after.filter { it.isWishlisted }.map { it.id }.toSet())
         assertTrue(after.filter { it.isVisited }.all { it.visitedAt != null })
@@ -103,12 +106,13 @@ class PersistenceAcrossRestartTest {
     fun `undoing a visit also survives a restart`() = runBlocking {
         val firstRun = relaunchApp()
         firstRun.observePlaces(MumbaiSeed.CITY_ID).first()
-        firstRun.setVisited("kala-ghoda", true)
-        firstRun.setVisited("kala-ghoda", false)
+        val undone = SeedPlaces.all.first().id
+        firstRun.setVisited(undone, true)
+        firstRun.setVisited(undone, false)
 
         val secondRun = relaunchApp()
         val reopened = secondRun.observePlaces(MumbaiSeed.CITY_ID).first()
-            .first { it.id == "kala-ghoda" }
+            .first { it.id == undone }
 
         assertFalse(reopened.isVisited)
         assertEquals(null, reopened.visitedAt)
@@ -118,14 +122,15 @@ class PersistenceAcrossRestartTest {
     fun `re-seeding on relaunch never clears user state`() = runBlocking {
         val firstRun = relaunchApp()
         firstRun.observePlaces(MumbaiSeed.CITY_ID).first()
-        firstRun.setVisited("powai-lake", true)
+        val kept = SeedPlaces.all.first().id
+        firstRun.setVisited(kept, true)
 
         // Three more cold starts, each of which runs the seeder again.
         repeat(3) {
             val run = relaunchApp()
             val all = run.observePlaces(MumbaiSeed.CITY_ID).first()
-            assertEquals(80, all.size)
-            assertTrue(all.first { it.id == "powai-lake" }.isVisited)
+            assertEquals(SeedPlaces.total, all.size)
+            assertTrue(all.first { it.id == kept }.isVisited)
         }
     }
 }

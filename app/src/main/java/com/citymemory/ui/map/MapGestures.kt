@@ -15,6 +15,7 @@ import androidx.compose.foundation.gestures.calculatePan
 import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.lerp
 import androidx.compose.ui.input.pointer.AwaitPointerEventScope
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.PointerInputScope
@@ -199,6 +200,41 @@ internal suspend fun MapCamera.animateZoomTo(target: Float, focus: Offset, viewp
     }
 }
 
+/**
+ * Flies the camera to [worldPoint], ending with it framed at [targetScale].
+ *
+ * Both the centre and the scale are interpolated, so this is one continuous
+ * move rather than a jump followed by a zoom — the streets you are looking at
+ * stay on screen while it travels, which is what makes the arrival legible.
+ * Scale is geometric for the same reason as [animateZoomTo].
+ */
+internal suspend fun MapCamera.animateCenterOn(
+    worldPoint: Offset,
+    targetScale: Float,
+    viewport: Size,
+    /**
+     * Where in the viewport [worldPoint] ends up. The default is the middle,
+     * which is what flying to a place wants; flying to a location the user is
+     * about to pin passes the picking anchor instead, so the point it lands on
+     * is the point under the ring.
+     */
+    anchorY: Float = 0.5f,
+) {
+    if (viewport.width <= 0f || viewport.height <= 0f) return
+    val startScale = scale
+    if (startScale <= 0f || targetScale <= 0f) return
+    val anchor = Offset(viewport.width / 2f, viewport.height * anchorY)
+    val startCenter = screenToWorld(anchor)
+    val ratio = targetScale / startScale
+    animate(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = tween(durationMillis = FLY_DURATION_MILLIS, easing = FastOutSlowInEasing),
+    ) { t, _ ->
+        centerOn(lerp(startCenter, worldPoint, t), startScale * ratio.pow(t), viewport, anchorY)
+    }
+}
+
 private fun Velocity.coerceMagnitude(max: Float): Velocity =
     Velocity(x.coerceIn(-max, max), y.coerceIn(-max, max))
 
@@ -221,3 +257,6 @@ private const val MIN_FLING_VELOCITY = 80f
 private const val FLING_FRICTION = 1.6f
 
 private const val ZOOM_DURATION_MILLIS = 300
+
+/** Longer than a double-tap: this one crosses the city as well as zooming. */
+private const val FLY_DURATION_MILLIS = 700

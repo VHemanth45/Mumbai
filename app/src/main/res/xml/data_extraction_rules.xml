@@ -3,6 +3,12 @@
   Android 12+. The exploration history is the entire value of the app and lives
   only on the device, so it is explicitly included in both cloud backup and
   device-to-device transfer. There is no account, no token and nothing sensitive.
+
+  Photos are the deliberate exception, and only for the cloud half. Auto Backup
+  has a 25 MB quota per app and exceeding it fails the *whole* backup — so a
+  dozen photos would silently take the exploration history down with them, which
+  is the one thing here that cannot be regenerated. Device-to-device transfer has
+  no such quota, so the photos ride along there.
 -->
 <data-extraction-rules>
     <cloud-backup>
@@ -10,5 +16,6 @@
     </cloud-backup>
     <device-transfer>
         <include domain="database" path="." />
+        <include domain="file" path="place-photos/" />
     </device-transfer>
 </data-extraction-rules>

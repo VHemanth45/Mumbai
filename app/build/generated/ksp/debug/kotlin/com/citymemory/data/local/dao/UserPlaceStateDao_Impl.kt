@@ -31,7 +31,7 @@ public class UserPlaceStateDao_Impl(
     this.__upsertAdapterOfUserPlaceStateEntity = EntityUpsertAdapter<UserPlaceStateEntity>(object :
         EntityInsertAdapter<UserPlaceStateEntity>() {
       protected override fun createQuery(): String =
-          "INSERT INTO `user_place_state` (`placeId`,`isVisited`,`isWishlisted`,`visitedAt`,`wishlistedAt`) VALUES (?,?,?,?,?)"
+          "INSERT INTO `user_place_state` (`placeId`,`isVisited`,`isWishlisted`,`visitedAt`,`wishlistedAt`,`rating`,`note`) VALUES (?,?,?,?,?,?,?)"
 
       protected override fun bind(statement: SQLiteStatement, entity: UserPlaceStateEntity) {
         statement.bindText(1, entity.placeId)
@@ -50,11 +50,23 @@ public class UserPlaceStateDao_Impl(
           statement.bindNull(5)
         } else {
           statement.bindLong(5, _tmpWishlistedAt)
+        }
+        val _tmpRating: Int? = entity.rating
+        if (_tmpRating == null) {
+          statement.bindNull(6)
+        } else {
+          statement.bindLong(6, _tmpRating.toLong())
+        }
+        val _tmpNote: String? = entity.note
+        if (_tmpNote == null) {
+          statement.bindNull(7)
+        } else {
+          statement.bindText(7, _tmpNote)
         }
       }
     }, object : EntityDeleteOrUpdateAdapter<UserPlaceStateEntity>() {
       protected override fun createQuery(): String =
-          "UPDATE `user_place_state` SET `placeId` = ?,`isVisited` = ?,`isWishlisted` = ?,`visitedAt` = ?,`wishlistedAt` = ? WHERE `placeId` = ?"
+          "UPDATE `user_place_state` SET `placeId` = ?,`isVisited` = ?,`isWishlisted` = ?,`visitedAt` = ?,`wishlistedAt` = ?,`rating` = ?,`note` = ? WHERE `placeId` = ?"
 
       protected override fun bind(statement: SQLiteStatement, entity: UserPlaceStateEntity) {
         statement.bindText(1, entity.placeId)
@@ -74,7 +86,19 @@ public class UserPlaceStateDao_Impl(
         } else {
           statement.bindLong(5, _tmpWishlistedAt)
         }
-        statement.bindText(6, entity.placeId)
+        val _tmpRating: Int? = entity.rating
+        if (_tmpRating == null) {
+          statement.bindNull(6)
+        } else {
+          statement.bindLong(6, _tmpRating.toLong())
+        }
+        val _tmpNote: String? = entity.note
+        if (_tmpNote == null) {
+          statement.bindNull(7)
+        } else {
+          statement.bindText(7, _tmpNote)
+        }
+        statement.bindText(8, entity.placeId)
       }
     })
   }
@@ -96,6 +120,8 @@ public class UserPlaceStateDao_Impl(
         val _columnIndexOfIsWishlisted: Int = getColumnIndexOrThrow(_stmt, "isWishlisted")
         val _columnIndexOfVisitedAt: Int = getColumnIndexOrThrow(_stmt, "visitedAt")
         val _columnIndexOfWishlistedAt: Int = getColumnIndexOrThrow(_stmt, "wishlistedAt")
+        val _columnIndexOfRating: Int = getColumnIndexOrThrow(_stmt, "rating")
+        val _columnIndexOfNote: Int = getColumnIndexOrThrow(_stmt, "note")
         val _result: UserPlaceStateEntity?
         if (_stmt.step()) {
           val _tmpPlaceId: String
@@ -120,8 +146,20 @@ public class UserPlaceStateDao_Impl(
           } else {
             _tmpWishlistedAt = _stmt.getLong(_columnIndexOfWishlistedAt)
           }
+          val _tmpRating: Int?
+          if (_stmt.isNull(_columnIndexOfRating)) {
+            _tmpRating = null
+          } else {
+            _tmpRating = _stmt.getLong(_columnIndexOfRating).toInt()
+          }
+          val _tmpNote: String?
+          if (_stmt.isNull(_columnIndexOfNote)) {
+            _tmpNote = null
+          } else {
+            _tmpNote = _stmt.getText(_columnIndexOfNote)
+          }
           _result =
-              UserPlaceStateEntity(_tmpPlaceId,_tmpIsVisited,_tmpIsWishlisted,_tmpVisitedAt,_tmpWishlistedAt)
+              UserPlaceStateEntity(_tmpPlaceId,_tmpIsVisited,_tmpIsWishlisted,_tmpVisitedAt,_tmpWishlistedAt,_tmpRating,_tmpNote)
         } else {
           _result = null
         }

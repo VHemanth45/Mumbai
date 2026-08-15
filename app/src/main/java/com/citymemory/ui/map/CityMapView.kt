@@ -11,6 +11,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -35,6 +36,9 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.drawText
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
@@ -46,6 +50,8 @@ import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import com.citymemory.domain.model.CityGeometry
+import com.citymemory.domain.model.GeoPoint
+import com.citymemory.domain.model.LabelTier
 import com.citymemory.domain.model.Place
 import com.citymemory.ui.theme.DimSlate
 import com.citymemory.ui.theme.GlowAmber
@@ -99,6 +105,12 @@ import kotlinx.coroutines.withContext
  * of every gesture, rebuilding the modifier chain sixty times a second while
  * the user is trying to zoom.
  *
+ * **Names sit above the composite, not inside it.** Everything else here is
+ * hidden until you have been there; the labels are the one exception, because
+ * an unlit city you cannot read is a city you cannot navigate. They are
+ * measured once in composition and drawn in screen space, so they stay upright
+ * and the same size at every zoom — see [drawLabels] and `MapStyle`.
+ *
  * The renderer knows nothing about Mumbai, Room or the dataset: it takes
  * geometry in lat/lng and places, and draws them.
  */
@@ -108,11 +120,53 @@ fun CityMapView(
     places: List<Place>,
     modifier: Modifier = Modifier,
     selectedPlaceId: String? = null,
-    onPlaceSelected: (Place) -> Unit = {},
+    /**
+     * The place to fly to, if any. Flown to once per place — re-emitting the
+     * same one (which happens on every visit or rating change) does not restart
+     * the animation and yank the map out from under the user.
+     */
+    focusedPlace: Place? = null,
+    /**
+     * Reports the coordinate under the picking anchor whenever the camera
+     * settles somewhere new. This is how a place gets added at a spot on the
+     * map instead of by typing numbers: the caller draws a ring at
+     * [PICK_ANCHOR_FRACTION] down the view, and whatever this last reported is
+     * underneath it.
+     */
+    onViewportCenterChange: ((GeoPoint) -> Unit)? = null,
+    /**
+     * True while the user is choosing where a new place goes.
+     *
+     * It changes exactly twice per place added — once when the form opens and
+     * once when it closes — which is the same cost as [focusedPlace] changing,
+     * and is why it is allowed to be a parameter at all. Nothing here may ever
+     * become a parameter that changes per frame; see the note above about
+     * reading movement in the draw pass rather than in composition.
+     *
+     * It buys two things, and the map is the only place that can provide
+     * either. **Zoom**, because at [MapCamera.MIN_SCALE] the whole city exactly
+     * fills the viewport and `constrain` therefore pins the offset to zero —
+     * the map cannot pan at all, so the anchor never moves and every place
+     * added from the overview lands on the identical coordinate. **Anchor**,
+     * because the form that asks for the name covers the bottom of the screen,
+     * and a ring in the dead centre would be behind it.
+     */
+    pickingLocation: Boolean = false,
+    /**
+     * A coordinate to put under the picking ring, and a token saying which
+     * request it belongs to.
+     *
+     * This is how "use my location" moves the map. The token exists because
+     * pressing the button twice from the same doorway produces the same
+     * coordinate, and a bare coordinate would compare equal and fly nowhere the
+     * second time — see `ExploreViewModel.FlyTarget`. It must never be fed from
+     * what [onViewportCenterChange] reports, which would be a loop.
+     */
+    flyTo: FlyTarget? = null,
 ) {
     val camera = rememberMapCamera()
 
-    // Projecting the whole city is ~387,000 points of arithmetic — near a
+    // Projecting the whole city is ~867,000 points of arithmetic — over a
     // second of it on a mid-range device, and it needs the canvas size, so it
     // cannot happen before layout. Doing it inside the draw pass would freeze
     // the first frame, so it happens off the main thread and the map fades in
@@ -140,6 +194,59 @@ fun CityMapView(
 
     val cache = remember { MapRenderCache() }
 
+    // Names are measured once and never again — and off the main thread, on the
+    // same principle as the projection above.
+    //
+    // Text layout is the expensive half of drawing a string. Doing all 219 in
+    // the composable body put them on the main thread on the very frame the map
+    // was trying to fade in, which is the one thing this file's whole
+    // arrangement exists to avoid; doing them in the draw pass would re-layout
+    // every visible name sixty times a second. Measured here, every subsequent
+    // frame is a blit at an offset.
+    //
+    // `cacheSize = 0` twice over: this holds its own finished layouts, so the
+    // measurer's own LRU would only thrash — and with no cache the instance
+    // carries no mutable state, which is what makes using it off the main
+    // thread safe rather than lucky.
+    //
+    // It also gets its own `produceState` rather than joining the one above.
+    // `rememberTextMeasurer` is keyed on the font resolver, density and layout
+    // direction, so folding it into the map's keys would mean a locale flip
+    // re-projected ~867,000 points in order to re-measure 219 short strings.
+    val textMeasurer = rememberTextMeasurer(cacheSize = 0)
+    val labels by produceState(
+        emptyList<ProjectedLabel>(),
+        prepared,
+        geometry.labels,
+        textMeasurer,
+    ) {
+        val map = prepared
+        if (map == null) {
+            value = emptyList()
+            return@produceState
+        }
+        value = withContext(Dispatchers.Default) {
+            geometry.labels.map { label ->
+                ProjectedLabel(
+                    world = map.projector.project(label.latitude, label.longitude),
+                    tier = label.tier,
+                    text = textMeasurer.measure(
+                        // Small capitals for an area, the way a printed map sets
+                        // a district. The generator title-cases; this is
+                        // presentation.
+                        text = if (label.tier == LabelTier.AREA) {
+                            label.name.uppercase()
+                        } else {
+                            label.name
+                        },
+                        style = MapStyle.styleFor(label.tier),
+                        maxLines = 1,
+                    ),
+                )
+            }
+        }
+    }
+
     // A slow shared breath so a lit area feels alive rather than stencilled.
     val breath = rememberInfiniteTransition(label = "breathing").animateFloat(
         initialValue = 0.97f,
@@ -166,6 +273,49 @@ fun CityMapView(
             bloom.animateTo(1f, tween(durationMillis = 1400, easing = FastOutSlowInEasing))
             bloomingPlaceId = null
         }
+    }
+
+    // Read through `rememberUpdatedState` so a caller passing a fresh lambda
+    // does not restart the collection, and conflated so a pan reports where the
+    // map got to rather than every frame on the way.
+    //
+    // Keyed on `pickingLocation` as well, so that opening the form re-collects
+    // and reports immediately: `snapshotFlow` emits its current value to a new
+    // collector, which matters when the anchor moves but the camera does not.
+    val reportCenter by rememberUpdatedState(onViewportCenterChange)
+    LaunchedEffect(prepared, pickingLocation) {
+        val map = prepared ?: return@LaunchedEffect
+        val anchorY = if (pickingLocation) PICK_ANCHOR_FRACTION else 0.5f
+        snapshotFlow { Triple(camera.scale, camera.offset, viewport) }
+            .conflate()
+            .collect { (_, _, size) ->
+                if (size.width <= 0 || size.height <= 0) return@collect
+                val anchor = Offset(size.width / 2f, size.height * anchorY)
+                reportCenter?.invoke(map.projector.unproject(camera.screenToWorld(anchor)))
+            }
+    }
+
+    // Zoom in far enough that the ring can actually be aimed.
+    //
+    // Two reasons, and the first is a correctness one. At MIN_SCALE the city
+    // exactly fills the viewport, so `MapCamera.constrain` clamps the offset to
+    // zero in both axes: the map does not pan, the anchor stays on one fixed
+    // coordinate, and every place added from the overview is written at the
+    // same lat/lng. The second is precision — the overview is ~25 m to the
+    // pixel, so even a map that *could* pan would place a pin to the nearest
+    // building block.
+    //
+    // A camera the user has already zoomed past this is left where it is: they
+    // have chosen a view, and yanking it would lose the place they had found.
+    LaunchedEffect(pickingLocation, viewport) {
+        if (!pickingLocation) return@LaunchedEffect
+        val canvas = viewport.toSize()
+        if (canvas.minDimension <= 0f || camera.scale >= PICK_SCALE) return@LaunchedEffect
+        camera.animateZoomTo(
+            target = PICK_SCALE,
+            focus = Offset(canvas.width / 2f, canvas.height * PICK_ANCHOR_FRACTION),
+            viewport = canvas,
+        )
     }
 
     // ---- Prewarming -------------------------------------------------------
@@ -229,14 +379,45 @@ fun CityMapView(
     // restarting the pointer handler.
     val placesState = rememberUpdatedState(places)
     val selectedState = rememberUpdatedState(selectedPlaceId)
-    val preparedState = rememberUpdatedState(prepared)
-    val currentOnPlaceSelected by rememberUpdatedState(onPlaceSelected)
-    val tapSlopPx = with(density) { TAP_SLOP.toPx() }
+    val labelsState = rememberUpdatedState(labels)
+
+    // Keyed on the id, not the place: the searched place lights up and gains a
+    // rating while its card is open, and each of those is a new `Place` value.
+    LaunchedEffect(focusedPlace?.id, prepared) {
+        val map = prepared ?: return@LaunchedEffect
+        val place = focusedPlace ?: return@LaunchedEffect
+        settleJob?.cancel()
+        settleJob = scope.launch {
+            camera.animateCenterOn(
+                worldPoint = map.projector.project(place.location),
+                targetScale = MapCamera.DETAIL_SCALE,
+                viewport = viewport.toSize(),
+            )
+        }
+    }
+
+    // Lands the point under the ring rather than in the middle of the screen,
+    // so what the map reports straight afterwards is the fix the user asked
+    // for and not something a third of a screen away from it.
+    LaunchedEffect(flyTo, prepared) {
+        val map = prepared ?: return@LaunchedEffect
+        val target = flyTo ?: return@LaunchedEffect
+        settleJob?.cancel()
+        settleJob = scope.launch {
+            camera.animateCenterOn(
+                worldPoint = map.projector.project(target.point),
+                targetScale = maxOf(camera.scale, PICK_SCALE),
+                viewport = viewport.toSize(),
+                anchorY = PICK_ANCHOR_FRACTION,
+            )
+        }
+    }
 
     val description = remember(places) {
         val visitedCount = places.count { it.isVisited }
         "Map of the city. $visitedCount of ${places.size} places explored. " +
-            "Pinch to zoom into an explored area, double tap to jump in."
+            "Pinch to zoom into an explored area, double tap to jump in. " +
+            "Use the search box above to open a place."
     }
 
     Spacer(
@@ -263,13 +444,11 @@ fun CityMapView(
                             }
                         }
                     },
-                    onTap = { tap ->
-                        val hit = preparedState.value?.projector?.let { projector ->
-                            placesState.value.nearestWithin(tap, camera, projector, tapSlopPx)
-                        }
-                        hit?.let(currentOnPlaceSelected)
-                        hit != null
-                    },
+                    // The map is for looking at, not for picking from: a single
+                    // tap selects nothing, so it always falls through to the
+                    // double-tap check and the only thing a touch can do here
+                    // is move the camera. Places are chosen by searching.
+                    onTap = { false },
                     onDoubleTap = { focus ->
                         settleJob = scope.launch {
                             camera.animateZoomTo(
@@ -295,6 +474,7 @@ fun CityMapView(
                     projector = map.projector,
                     camera = camera,
                     cache = cache,
+                    labels = labelsState.value,
                     places = placesState.value,
                     revealRadius = map.revealRadius,
                     // Read only while zoomed out. Not just taste: an animation
@@ -316,26 +496,6 @@ fun CityMapView(
     )
 }
 
-/** The place nearest [tap] on screen, if any is within [slop] of it. */
-private fun List<Place>.nearestWithin(
-    tap: Offset,
-    camera: MapCamera,
-    projector: GeoProjector,
-    slop: Float,
-): Place? {
-    var best: Place? = null
-    var bestDistance = slop * slop
-    for (place in this) {
-        val delta = camera.worldToScreen(projector.project(place.location)) - tap
-        val distance = delta.getDistanceSquared()
-        if (distance <= bestDistance) {
-            bestDistance = distance
-            best = place
-        }
-    }
-    return best
-}
-
 // ---------------------------------------------------------------------------
 // Drawing
 // ---------------------------------------------------------------------------
@@ -352,6 +512,22 @@ private class PreparedMap(
 private class Reveal(var center: Offset, var radius: Float)
 
 /**
+ * A name, projected once and laid out once.
+ *
+ * [world] is in scale-1 coordinates like everything else the renderer holds, so
+ * the camera transform maps it to the screen the same way it maps a street.
+ * [text] is a finished [TextLayoutResult]: measuring is the expensive half of
+ * drawing a string, and holding the result is what keeps the draw pass to a
+ * blit at an offset.
+ */
+@Immutable
+private class ProjectedLabel(
+    val world: Offset,
+    val tier: LabelTier,
+    val text: TextLayoutResult,
+)
+
+/**
  * The per-view scratch a frame needs and must not allocate.
  *
  * At sixty frames a second everything here would otherwise be garbage: two
@@ -365,6 +541,15 @@ private class MapRenderCache {
     val detail = DetailLevel()
     val reveals = ArrayList<Reveal>()
     private var pooled = ArrayList<Reveal>()
+
+    /**
+     * The screen rectangles labels have already claimed this frame.
+     *
+     * Cleared and refilled rather than reallocated, like everything else here:
+     * a fresh list per frame is sixty allocations a second for something whose
+     * size barely changes.
+     */
+    val labelRects = ArrayList<Rect>()
 
     /** Hands back a [Reveal], reusing one from a previous frame if there is one. */
     fun reveal(center: Offset, radius: Float): Reveal {
@@ -490,6 +675,7 @@ private fun DrawScope.drawCity(
     projector: GeoProjector,
     camera: MapCamera,
     cache: MapRenderCache,
+    labels: List<ProjectedLabel>,
     places: List<Place>,
     revealRadius: Float,
     breathing: Float,
@@ -535,6 +721,65 @@ private fun DrawScope.drawCity(
         bloomingPlaceId = bloomingPlaceId,
         bloomProgress = bloomProgress,
     )
+
+    // Last, and outside every transform: text is drawn in screen space so it
+    // stays upright and the same size however far the map is zoomed, and it
+    // sits above the composited reveal so a name is legible whether or not you
+    // have been there. See the note on `MapStyle.LabelShadow` for why that is
+    // the right call for names and the wrong one for everything else.
+    drawLabels(labels, camera, cache)
+}
+
+/**
+ * Draws as many names as will fit without overlapping.
+ *
+ * Greedy rejection in the order the labels arrive, which is the order
+ * `tools/build_labels.py` wrote them: postal areas first, then places. So when
+ * both tiers are on screen the areas claim their space first, which is the
+ * right precedence — the district you are in matters more than which of six
+ * temples you can see.
+ *
+ * The cost is quadratic in the number of labels *kept*, not in the number that
+ * exist: everything off screen or out of its zoom range is rejected before the
+ * overlap test. In practice that is twenty-odd rectangles against twenty-odd,
+ * once a frame, which does not register next to tessellating a tile of
+ * buildings.
+ */
+private fun DrawScope.drawLabels(
+    labels: List<ProjectedLabel>,
+    camera: MapCamera,
+    cache: MapRenderCache,
+) {
+    if (labels.isEmpty()) return
+    val scale = camera.scale
+    val placed = cache.labelRects
+    placed.clear()
+
+    for (label in labels) {
+        if (!MapStyle.isLabelVisible(label.tier, scale)) continue
+
+        val center = camera.worldToScreen(label.world)
+        val width = label.text.size.width.toFloat()
+        val height = label.text.size.height.toFloat()
+
+        // A place name is offered three positions beside its marker before it
+        // gives up; an area name has only the one. See `LabelPlacement`.
+        for (index in 0 until LabelPlacement.placementCount(label.tier)) {
+            val topLeft = LabelPlacement.placementTopLeft(
+                tier = label.tier,
+                index = index,
+                center = center,
+                width = width,
+                height = height,
+                gap = MapStyle.LabelMarkerGapPx,
+            )
+            val claim = LabelPlacement.claimAt(topLeft, width, height, MapStyle.LabelPaddingPx)
+            if (LabelPlacement.claim(placed, claim, size)) {
+                drawText(label.text, topLeft = topLeft)
+                break
+            }
+        }
+    }
 }
 
 private fun DrawScope.drawNight() {
@@ -759,8 +1004,19 @@ private fun DrawScope.drawPlaces(
     }
 }
 
+/**
+ * A place you have not been to yet: the faintest mark the map makes.
+ *
+ * There are 3,191 of these and only a handful of lit ones, so the dots are by
+ * far the most numerous thing drawn — at the overview they cover the city in a
+ * speckle that competed with the coastline and the arterials for attention. The
+ * dot's job is only to say *something is here*, and it does that at a fraction
+ * of the weight: held well under the lit markers so a visited place still reads
+ * as the brightest thing on screen, and small enough that a dense stretch of
+ * Bandra reads as texture rather than as static.
+ */
 private fun DrawScope.drawUnvisited(center: Offset) {
-    drawCircle(color = DimSlate.copy(alpha = 0.42f), radius = 1.9.dp.toPx(), center = center)
+    drawCircle(color = DimSlate.copy(alpha = 0.22f), radius = 1.5.dp.toPx(), center = center)
 }
 
 private fun DrawScope.drawWishlisted(center: Offset, breathing: Float) {
@@ -800,8 +1056,8 @@ private fun DrawScope.drawVisited(center: Offset, breathing: Float, glow: Float)
             center = center,
         )
     }
-    // The core never fades all the way out: it stays the tap target, and the
-    // anchor that says which point of the lit area is the place itself.
+    // The core never fades all the way out: it is the anchor that says which
+    // point of the lit area is the place itself.
     drawCircle(
         brush = Brush.radialGradient(
             colors = listOf(GlowCore.copy(alpha = 0.55f), Color.Transparent),
@@ -894,9 +1150,25 @@ private const val PREWARM_MARGIN = 0.35f
 private const val PREWARM_INTERVAL_MILLIS = 80L
 
 /** Large enough to contain any projected city, for whole-map prewarming. */
+/**
+ * How far down the viewport the picking ring sits, as a fraction of its height.
+ *
+ * Not the middle, because the form asking for the name covers the bottom of the
+ * screen and a ring in the dead centre would sit behind it — you would be
+ * aiming something you cannot see. A third of the way down clears the header
+ * above and the sheet below on a phone.
+ *
+ * Public because `ExploreScreen` has to align the ring to exactly the point
+ * this view reports; the two reading one constant is what keeps them honest.
+ */
+const val PICK_ANCHOR_FRACTION = 0.35f
+
+/**
+ * The zoom a location is picked at, ~1.8 m to the pixel: close enough that the
+ * ring sits on a building rather than on a block.
+ */
+private const val PICK_SCALE = 14f
+
 private val WHOLE_WORLD = Rect(-1e6f, -1e6f, 1e6f, 1e6f)
 
 private val MAP_PADDING: Dp = 20.dp
-
-/** Generous, because the lights are small and fingers are not. */
-private val TAP_SLOP: Dp = 22.dp

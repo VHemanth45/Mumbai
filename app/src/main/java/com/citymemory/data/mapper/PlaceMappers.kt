@@ -27,9 +27,13 @@ fun PlaceWithState.toDomain(): Place = Place(
     longitude = place.longitude,
     imageUrl = place.imageUrl,
     displayOrder = place.displayOrder,
+    address = place.address,
+    isUserAdded = place.isUserAdded,
     isVisited = state?.isVisited == true,
     isWishlisted = state?.isWishlisted == true,
     visitedAt = state?.visitedAt,
+    rating = state?.rating,
+    note = state?.note,
 )
 
 fun Place.toEntity(): PlaceEntity = PlaceEntity(
@@ -42,4 +46,6 @@ fun Place.toEntity(): PlaceEntity = PlaceEntity(
     longitude = longitude,
     imageUrl = imageUrl,
     displayOrder = displayOrder,
+    address = address,
+    isUserAdded = isUserAdded,
 )

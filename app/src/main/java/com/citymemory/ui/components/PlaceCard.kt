@@ -114,6 +114,20 @@ fun PlaceCard(
                     }
                 }
 
+                // The address, not the description, and above it. The catalog
+                // carries every mapped place in Mumbai, so a list can hold
+                // thirty-two rows called "Starbucks" — the address is the only
+                // thing on the card that says which one each of them is.
+                place.address?.let { address ->
+                    Text(
+                        text = address,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = TextTertiary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+
                 if (place.description.isNotBlank()) {
                     Text(
                         text = place.description,

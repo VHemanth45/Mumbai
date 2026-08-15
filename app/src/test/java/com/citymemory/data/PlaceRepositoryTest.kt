@@ -5,6 +5,7 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.citymemory.data.local.database.CityMemoryDatabase
 import com.citymemory.data.local.seed.DatabaseSeeder
+import com.citymemory.SeedPlaces
 import com.citymemory.data.local.seed.MumbaiSeed
 import com.citymemory.data.repository.PlaceRepositoryImpl
 import com.citymemory.domain.model.Place
@@ -36,13 +37,19 @@ class PlaceRepositoryTest {
 
     private var fakeNow = 1_000L
 
+    // Resolved from the generated seed rather than typed, so regenerating the
+    // dataset cannot break a test about visiting and rating.
+    private val anyPlace = SeedPlaces.all.first().id
+    private val aCafe = SeedPlaces.id(PlaceCategory.CAFE)
+    private val aRestaurant = SeedPlaces.id(PlaceCategory.RESTAURANT)
+
     @Before
     fun setUp() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         database = Room.inMemoryDatabaseBuilder(context, CityMemoryDatabase::class.java)
             .allowMainThreadQueries()
             .build()
-        repository = PlaceRepositoryImpl(database, DatabaseSeeder(database)) { fakeNow }
+        repository = PlaceRepositoryImpl(database, DatabaseSeeder(database, SeedPlaces.catalog)) { fakeNow }
     }
 
     @After
@@ -58,9 +65,8 @@ class PlaceRepositoryTest {
     fun `first read seeds the full mumbai catalog`() = runBlocking {
         val seeded = places()
 
-        assertEquals(80, seeded.size)
-        assertEquals(MumbaiSeed.places.size, seeded.size)
-        assertEquals("Gateway of India", seeded.first().name)
+        assertEquals(SeedPlaces.total, seeded.size)
+        assertEquals(SeedPlaces.all.first().name, seeded.first().name)
     }
 
     @Test
@@ -72,9 +78,9 @@ class PlaceRepositoryTest {
 
     @Test
     fun `seeding is idempotent across repeated reads`() = runBlocking {
-        repeat(3) { assertEquals(80, places().size) }
+        repeat(3) { assertEquals(SeedPlaces.total, places().size) }
 
-        assertEquals(80, database.placeDao().count())
+        assertEquals(SeedPlaces.total, database.placeDao().count())
     }
 
     @Test
@@ -88,45 +94,45 @@ class PlaceRepositoryTest {
 
     @Test
     fun `marking visited persists the flag and the timestamp`() = runBlocking {
-        repository.setVisited("gateway-of-india", true)
+        repository.setVisited(anyPlace, true)
 
-        val marked = place("gateway-of-india")
+        val marked = place(anyPlace)
         assertTrue(marked.isVisited)
         assertEquals(1_000L, marked.visitedAt)
     }
 
     @Test
     fun `re-marking a visited place keeps the original timestamp`() = runBlocking {
-        repository.setVisited("marine-drive", true)
+        repository.setVisited(anyPlace, true)
         fakeNow = 9_999L
-        repository.setVisited("marine-drive", true)
+        repository.setVisited(anyPlace, true)
 
-        assertEquals(1_000L, place("marine-drive").visitedAt)
+        assertEquals(1_000L, place(anyPlace).visitedAt)
     }
 
     @Test
     fun `undoing a visit clears both the flag and the timestamp`() = runBlocking {
-        repository.setVisited("juhu-beach", true)
-        repository.setVisited("juhu-beach", false)
+        repository.setVisited(anyPlace, true)
+        repository.setVisited(anyPlace, false)
 
-        val undone = place("juhu-beach")
+        val undone = place(anyPlace)
         assertFalse(undone.isVisited)
         assertNull(undone.visitedAt)
     }
 
     @Test
     fun `wishlist and visited are independent`() = runBlocking {
-        repository.setWishlisted("haji-ali", true)
-        assertTrue(place("haji-ali").isWishlisted)
-        assertFalse(place("haji-ali").isVisited)
+        repository.setWishlisted(anyPlace, true)
+        assertTrue(place(anyPlace).isWishlisted)
+        assertFalse(place(anyPlace).isVisited)
 
-        repository.setVisited("haji-ali", true)
-        val both = place("haji-ali")
+        repository.setVisited(anyPlace, true)
+        val both = place(anyPlace)
         assertTrue(both.isWishlisted)
         assertTrue(both.isVisited)
 
-        repository.setWishlisted("haji-ali", false)
-        val visitedOnly = place("haji-ali")
+        repository.setWishlisted(anyPlace, false)
+        val visitedOnly = place(anyPlace)
         assertFalse(visitedOnly.isWishlisted)
         assertTrue(visitedOnly.isVisited)
     }
@@ -135,22 +141,22 @@ class PlaceRepositoryTest {
     fun `state row is dropped once a place is neither visited nor wishlisted`() = runBlocking {
         val dao = database.userPlaceStateDao()
 
-        repository.setWishlisted("kala-ghoda", true)
-        assertNotNull(dao.getState("kala-ghoda"))
+        repository.setWishlisted(anyPlace, true)
+        assertNotNull(dao.getState(anyPlace))
 
-        repository.setWishlisted("kala-ghoda", false)
-        assertNull(dao.getState("kala-ghoda"))
+        repository.setWishlisted(anyPlace, false)
+        assertNull(dao.getState(anyPlace))
     }
 
     @Test
     fun `clearing one flag keeps the row while the other is still set`() = runBlocking {
         val dao = database.userPlaceStateDao()
 
-        repository.setVisited("bandra-fort", true)
-        repository.setWishlisted("bandra-fort", true)
-        repository.setVisited("bandra-fort", false)
+        repository.setVisited(anyPlace, true)
+        repository.setWishlisted(anyPlace, true)
+        repository.setVisited(anyPlace, false)
 
-        val remaining = dao.getState("bandra-fort")
+        val remaining = dao.getState(anyPlace)
         assertNotNull(remaining)
         assertTrue(remaining!!.isWishlisted)
         assertFalse(remaining.isVisited)
@@ -158,12 +164,12 @@ class PlaceRepositoryTest {
 
     @Test
     fun `observePlace tracks a single place`() = runBlocking {
-        repository.setVisited("elephanta-caves", true)
+        repository.setVisited(anyPlace, true)
 
-        val single = repository.observePlace("elephanta-caves").first()
+        val single = repository.observePlace(anyPlace).first()
 
         assertNotNull(single)
-        assertEquals("Elephanta Caves", single!!.name)
+        assertEquals(SeedPlaces.all.first().name, single!!.name)
         assertTrue(single.isVisited)
     }
 
@@ -180,19 +186,92 @@ class PlaceRepositoryTest {
     }
 
     @Test
+    fun `a rating and an opinion are stored against the place`() = runBlocking {
+        repository.setVisited(aCafe, true)
+        repository.setReview(aCafe, rating = 4, note = "Loud, and worth it.")
+
+        val rated = place(aCafe)
+        assertEquals(4, rated.rating)
+        assertEquals("Loud, and worth it.", rated.note)
+        assertTrue(rated.hasReview)
+    }
+
+    @Test
+    fun `a place can be rated without having been marked visited`() = runBlocking {
+        repository.setReview(aRestaurant, rating = 5, note = null)
+
+        val rated = place(aRestaurant)
+        assertFalse(rated.isVisited)
+        assertEquals(5, rated.rating)
+    }
+
+    @Test
+    fun `un-marking a visit keeps what the user wrote about the place`() = runBlocking {
+        repository.setVisited(aRestaurant, true)
+        repository.setReview(aRestaurant, rating = 5, note = "Eat it standing up.")
+
+        repository.setVisited(aRestaurant, false)
+
+        // The undo is of the visit, not of the opinion — losing the text here
+        // would be losing the only thing in this app the user actually wrote.
+        val undone = place(aRestaurant)
+        assertFalse(undone.isVisited)
+        assertNull(undone.visitedAt)
+        assertEquals(5, undone.rating)
+        assertEquals("Eat it standing up.", undone.note)
+    }
+
+    @Test
+    fun `clearing the review of an unvisited place drops the row entirely`() = runBlocking {
+        val dao = database.userPlaceStateDao()
+        repository.setReview(anyPlace, rating = 3, note = "Odd and quiet.")
+        assertNotNull(dao.getState(anyPlace))
+
+        repository.setReview(anyPlace, rating = null, note = "")
+
+        assertNull(dao.getState(anyPlace))
+    }
+
+    @Test
+    fun `a blank opinion is stored as nothing written`() = runBlocking {
+        repository.setVisited(anyPlace, true)
+        repository.setReview(anyPlace, rating = null, note = "   ")
+
+        val place = place(anyPlace)
+        assertNull(place.note)
+        assertFalse(place.hasReview)
+    }
+
+    @Test
+    fun `an opinion is trimmed rather than stored with its whitespace`() = runBlocking {
+        repository.setReview(anyPlace, rating = 4, note = "  Best from the bridge. \n")
+
+        assertEquals("Best from the bridge.", place(anyPlace).note)
+    }
+
+    @Test
+    fun `a rating outside one to five is pulled back into range`() = runBlocking {
+        repository.setReview(anyPlace, rating = 9, note = null)
+        assertEquals(5, place(anyPlace).rating)
+
+        repository.setReview(anyPlace, rating = 0, note = null)
+        assertEquals(1, place(anyPlace).rating)
+    }
+
+    @Test
     fun `observePlaces re-emits when a place is marked visited`() = runBlocking {
         withTimeout(15_000) {
             val stream = repository.observePlaces(MumbaiSeed.CITY_ID)
-            assertFalse(stream.first().first { it.id == "siddhivinayak" }.isVisited)
+            assertFalse(stream.first().first { it.id == anyPlace }.isVisited)
 
             val awaitingUpdate = async {
-                stream.first { batch -> batch.first { it.id == "siddhivinayak" }.isVisited }
+                stream.first { batch -> batch.first { it.id == anyPlace }.isVisited }
             }
             delay(250)
-            repository.setVisited("siddhivinayak", true)
+            repository.setVisited(anyPlace, true)
 
             val updated = awaitingUpdate.await()
-            assertTrue(updated.first { it.id == "siddhivinayak" }.isVisited)
+            assertTrue(updated.first { it.id == anyPlace }.isVisited)
         }
     }
 }

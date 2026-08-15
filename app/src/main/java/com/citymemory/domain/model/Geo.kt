@@ -103,7 +103,7 @@ enum class ShapeKind(val id: Int) {
  * One closed polygon (see [ShapeKind.isArea]) or open polyline.
  *
  * Points are held as two parallel arrays rather than a `List<GeoPoint>`: the
- * real Mumbai asset is ~387,000 points, and one boxed object per point would
+ * real Mumbai asset is ~867,000 points, and one boxed object per point would
  * cost tens of megabytes of heap and a full GC pause to build.
  */
 class CityShape(
@@ -135,6 +135,15 @@ data class CityGeometry(
     val cityId: String,
     val bounds: GeoBounds,
     val shapes: List<CityShape>,
+    /**
+     * The names drawn over the shapes — see [MapLabel].
+     *
+     * They live here rather than behind their own provider because this type is
+     * documented as everything the renderer needs to draw a city, and a name is
+     * exactly that. Defaulted to empty so a source that has no labels — the
+     * hand-authored fallback outline, and every test fixture — is unaffected.
+     */
+    val labels: List<MapLabel> = emptyList(),
 ) {
     companion object {
         val Empty = CityGeometry("", GeoBounds(0.0, 0.0, 1.0, 1.0), emptyList())

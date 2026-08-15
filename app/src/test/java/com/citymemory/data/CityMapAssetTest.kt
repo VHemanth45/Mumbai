@@ -1,5 +1,6 @@
 package com.citymemory.data
 
+import com.citymemory.SeedPlaces
 import com.citymemory.data.local.seed.MumbaiSeed
 import com.citymemory.data.map.CityMapCodec
 import com.citymemory.domain.model.CityGeometry
@@ -18,11 +19,39 @@ import org.junit.Test
  *
  * `CityMapCodec` takes an `InputStream` rather than an `AssetManager` precisely
  * so this can happen in an ordinary JVM test: the thing that gets asserted here
- * is the same 1.8 MB of OpenStreetMap geometry that ends up in the APK. A
+ * is the same 3.6 MB of OpenStreetMap geometry that ends up in the APK. A
  * regenerated asset that lost its buildings, drifted off Mumbai or broke the
  * delta encoding fails the build rather than shipping as a dark screen.
  */
 class CityMapAssetTest {
+
+    private companion object {
+        /**
+         * How many places may have no building or footpath in their lit area.
+         *
+         * Two percent, and the ceiling moved because the light did: at a 340 m
+         * reveal this was one place in 3,191, and at 100 m it is 37. That is not
+         * a regression, it is the radius asking a harder question — 100 m around
+         * Juhu Beach or the middle of Shivaji Park is sand and grass, and
+         * OpenStreetMap is right that there is nothing there.
+         *
+         * It is still worth asserting, because the failure it exists to catch is
+         * not subtle: a broken `DETAIL_RADIUS_M` in `tools/extract_osm.py` puts
+         * *thousands* here, not dozens.
+         */
+        const val MAX_FLAT_FRACTION = 0.02
+
+        /**
+         * How many places may light up with nothing in them at all — no road,
+         * no coastline, no park edge, nothing.
+         *
+         * Five places in 3,191 today, all of them beaches or open ground where
+         * the mapped geometry is the outline and its nearest edge is more than
+         * 100 m from the point the catalog carries. Half a percent leaves room
+         * for the data to shift without leaving room for the pipeline to break.
+         */
+        const val MAX_BARREN_FRACTION = 0.005
+    }
 
     // Gradle runs unit tests from the module directory; the second path keeps
     // this working if it is ever run from the repository root instead.
@@ -34,6 +63,11 @@ class CityMapAssetTest {
 
     private val geometry: CityGeometry by lazy {
         asset.inputStream().use { CityMapCodec.decode(MumbaiSeed.CITY_ID, it) }
+    }
+
+    /** Built once for the whole class; see [PointGrid] for why it has to be. */
+    private val grid: PointGrid by lazy {
+        PointGrid(geometry, MapStyle.RevealRadiusMeters.toDouble())
     }
 
     @Test
@@ -58,7 +92,7 @@ class CityMapAssetTest {
     @Test
     fun `every seeded place falls inside the map`() {
         val b = geometry.bounds
-        val outside = MumbaiSeed.places.filterNot {
+        val outside = SeedPlaces.all.filterNot {
             it.latitude in b.minLatitude..b.maxLatitude &&
                 it.longitude in b.minLongitude..b.maxLongitude
         }
@@ -90,27 +124,48 @@ class CityMapAssetTest {
      * radius would light up an empty warm circle.
      */
     @Test
-    fun `every seeded place has geometry inside its lit area`() {
-        val barren = MumbaiSeed.places
-            .map { it.name to countShapesNear(it.latitude, it.longitude) }
-            .filter { (_, count) -> count == 0 }
+    fun `essentially every seeded place has geometry inside its lit area`() {
+        val radius = MapStyle.RevealRadiusMeters.toDouble()
+        val barren = SeedPlaces.all.filterNot {
+            grid.hasPointWithin(it.latitude, it.longitude, radius, detailOnly = false)
+        }
 
-        assertTrue("nothing would light up around: ${barren.map { it.first }}", barren.isEmpty())
+        assertTrue(
+            "${barren.size} of ${SeedPlaces.total} places would light up an empty warm " +
+                "circle at ${radius.toInt()} m: ${barren.take(20).map { it.name }}",
+            barren.size <= SeedPlaces.total * MAX_BARREN_FRACTION,
+        )
     }
 
     /**
      * Roads alone read as a diagram. Building footprints and footpaths are what
      * make a lit area look like a place someone walked around in.
+     *
+     * This used to demand every place, and could, because the catalog was 177
+     * curated places in the middle of the city and the light reached 420 m.
+     * Neither is true now. The catalog is everything OpenStreetMap has mapped
+     * inside Mumbai, and the reveal is 100 m — close enough that a place on a
+     * beach or in the middle of a park has nothing but sand and grass inside it.
+     *
+     * So the assertion is a ceiling rather than a zero. See
+     * [MAX_FLAT_FRACTION]: it is loose enough for the data to be what it is and
+     * tight enough that the failure it exists to catch — a broken
+     * `DETAIL_RADIUS_M` in `tools/extract_osm.py`, which would put thousands of
+     * places here — still fails the build.
      */
     @Test
-    fun `every seeded place has street-level detail inside its lit area`() {
-        val flat = MumbaiSeed.places
-            .map { place ->
-                place.name to countShapesNear(place.latitude, place.longitude) { it.isDetail }
-            }
-            .filter { (_, count) -> count == 0 }
+    fun `almost every seeded place has street-level detail inside its lit area`() {
+        val radius = MapStyle.RevealRadiusMeters.toDouble()
+        val flat = SeedPlaces.all.filterNot {
+            grid.hasPointWithin(it.latitude, it.longitude, radius, detailOnly = true)
+        }
 
-        assertTrue("no buildings or paths around: ${flat.map { it.first }}", flat.isEmpty())
+        val allowed = SeedPlaces.total * MAX_FLAT_FRACTION
+        assertTrue(
+            "${flat.size} of ${SeedPlaces.total} places have no buildings or paths " +
+                "within ${radius.toInt()} m: ${flat.take(20).map { it.name }}",
+            flat.size <= allowed,
+        )
     }
 
     @Test
@@ -166,32 +221,95 @@ class CityMapAssetTest {
     // -----------------------------------------------------------------------
 
     /**
-     * Shapes with at least one vertex inside the reveal radius of a point.
+     * Every vertex in the asset, bucketed into cells one reveal radius across.
+     *
+     * The naive form of this — walk all 152,000 shapes per place — was fine
+     * when the catalog was 177 places and is not remotely fine at 3,566: it is
+     * half a billion shape scans, and the test stopped finishing. Bucketing
+     * once turns each lookup into the nine cells that can hold a point within
+     * the radius, and the whole suite back into seconds.
+     *
      * Equirectangular, like `GeoProjector` — over a few hundred metres the
      * error against a proper geodesic is far below what is being asserted.
      */
-    private fun countShapesNear(
-        latitude: Double,
-        longitude: Double,
-        predicate: (ShapeKind) -> Boolean = { true },
-    ): Int {
-        val radius = MapStyle.RevealRadiusMeters.toDouble()
-        val metresPerDegLat = 111_320.0
-        val metresPerDegLng = 111_320.0 * cos(Math.toRadians(latitude))
-        var count = 0
+    private class PointGrid(geometry: CityGeometry, cellMetres: Double) {
 
-        for (shape in geometry.shapes) {
-            if (!predicate(shape.kind)) continue
-            for (i in 0 until shape.size) {
-                val dy = (shape.latitudes[i] - latitude) * metresPerDegLat
-                val dx = (shape.longitudes[i] - longitude) * metresPerDegLng
-                if (sqrt(dx * dx + dy * dy) <= radius) {
-                    count++
-                    break
+        private val cellLat = cellMetres / METRES_PER_DEG_LAT
+        private val cellLng = cellMetres / metresPerDegLng(CITY_CENTRE_LAT)
+
+        private val lats: DoubleArray
+        private val lngs: DoubleArray
+        private val detail: BooleanArray
+
+        /** Cell key -> the indices in [lats] / [lngs] that fall in it. */
+        private val cells: Map<Long, IntArray>
+
+        init {
+            val total = geometry.shapes.sumOf { it.size }
+            lats = DoubleArray(total)
+            lngs = DoubleArray(total)
+            detail = BooleanArray(total)
+
+            var n = 0
+            val keys = LongArray(total)
+            for (shape in geometry.shapes) {
+                val isDetail = shape.kind.isDetail
+                for (i in 0 until shape.size) {
+                    lats[n] = shape.latitudes[i]
+                    lngs[n] = shape.longitudes[i]
+                    detail[n] = isDetail
+                    keys[n] = key(shape.latitudes[i], shape.longitudes[i])
+                    n++
                 }
             }
+
+            val grouped = HashMap<Long, MutableList<Int>>()
+            for (i in 0 until total) grouped.getOrPut(keys[i]) { ArrayList() }.add(i)
+            cells = grouped.mapValues { (_, list) -> list.toIntArray() }
         }
-        return count
+
+        // Mumbai is north and east of the origin, so truncation and floor agree
+        // and the cheaper one is safe here.
+        private fun key(latitude: Double, longitude: Double): Long =
+            cellKey((latitude / cellLat).toLong(), (longitude / cellLng).toLong())
+
+        /** True when any vertex — or any detail vertex — is within [radius]. */
+        fun hasPointWithin(
+            latitude: Double,
+            longitude: Double,
+            radius: Double,
+            detailOnly: Boolean,
+        ): Boolean {
+            val mPerLng = metresPerDegLng(latitude)
+            val row = (latitude / cellLat).toLong()
+            val col = (longitude / cellLng).toLong()
+            for (dr in -1..1) {
+                for (dc in -1..1) {
+                    val bucket = cells[cellKey(row + dr, col + dc)] ?: continue
+                    for (i in bucket) {
+                        if (detailOnly && !detail[i]) continue
+                        val dy = (lats[i] - latitude) * METRES_PER_DEG_LAT
+                        val dx = (lngs[i] - longitude) * mPerLng
+                        if (sqrt(dx * dx + dy * dy) <= radius) return true
+                    }
+                }
+            }
+            return false
+        }
+
+        private companion object {
+            const val METRES_PER_DEG_LAT = 111_320.0
+            const val CITY_CENTRE_LAT = 19.07
+
+            /** Keeps a negative cell index positive before packing. */
+            const val OFFSET = 1_000_000L
+            const val SPAN = 4_000_000L
+
+            fun cellKey(row: Long, col: Long): Long = (row + OFFSET) * SPAN + (col + OFFSET)
+
+            fun metresPerDegLng(latitude: Double): Double =
+                METRES_PER_DEG_LAT * cos(Math.toRadians(latitude))
+        }
     }
 
     /** Mirrors `tools/build_map_asset.py`, so the round-trip test is honest. */

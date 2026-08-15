@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.citymemory.ui.ScratchC1MapProbeTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-08-15T08:44:41.685Z" hostname="Mac.lan" time="2.316">
+  <properties/>
+  <testcase name="probe J - picking moves the anchor and zooms" classname="com.citymemory.ui.ScratchC1MapProbeTest" time="2.112"/>
+  <testcase name="probe K - the map's only semantics is its content description" classname="com.citymemory.ui.ScratchC1MapProbeTest" time="0.068"/>
+  <testcase name="probe H - gestures move the reported centre" classname="com.citymemory.ui.ScratchC1MapProbeTest" time="0.089"/>
+  <testcase name="probe I - flyTo and focusedPlace land the camera" classname="com.citymemory.ui.ScratchC1MapProbeTest" time="0.047"/>
+  <system-out><![CDATA[PROBE-J overview centre=GeoPoint(latitude=19.079999986290932, longitude=72.88000000036725)
+PROBE-J picking anchor=GeoPoint(latitude=19.168517577648164, longitude=72.87999997898027) n=21
+PROBE-K before=SemanticsConfiguration@1a095e6a{ ContentDescription : [Map of the city. 0 of 1 places explored. Pinch to zoom into an explored area, double tap to jump in. Use the search box above to open a place.] }
+PROBE-K after visit=SemanticsConfiguration@29ddca83{ ContentDescription : [Map of the city. 1 of 1 places explored. Pinch to zoom into an explored area, double tap to jump in. Use the search box above to open a place.] }
+PROBE-H initial=GeoPoint(latitude=19.079999986290932, longitude=72.88000000036725) (n=1)
+PROBE-H after swipe at min scale=GeoPoint(latitude=19.079999986290932, longitude=72.88000000036725) (n=1)
+PROBE-H after double tap=GeoPoint(latitude=19.079999986290932, longitude=72.87999997898027) (n=20)
+PROBE-H after pan when zoomed=GeoPoint(latitude=19.071248057484627, longitude=72.87999997898027) (n=23)
+PROBE-I initial=GeoPoint(latitude=19.079999986290932, longitude=72.88000000036725)
+PROBE-I after focusedPlace(19.0760,72.8777)=GeoPoint(latitude=19.076000007987023, longitude=72.87770001223875) n=45
+PROBE-I after flyTo(19.2000,72.9500)=GeoPoint(latitude=19.193677338957787, longitude=72.94999999891985) n=89
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

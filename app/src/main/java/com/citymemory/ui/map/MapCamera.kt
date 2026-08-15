@@ -83,12 +83,25 @@ class MapCamera(scale: Float = MIN_SCALE, offset: Offset = Offset.Zero) {
         return offset != before
     }
 
-    /** Frames [worldPoint] in the middle of the viewport at [targetScale]. */
-    fun centerOn(worldPoint: Offset, targetScale: Float, viewport: Size) {
+    /**
+     * Frames [worldPoint] at [anchorY] down the viewport, at [targetScale].
+     *
+     * The default puts it in the middle, which is what flying to a place wants.
+     * Adding a place wants it under the picking ring instead, which is higher
+     * up the screen because the form covers the bottom — so that caller passes
+     * `PICK_ANCHOR_FRACTION` and the point it flew to is the point the map then
+     * reports.
+     */
+    fun centerOn(
+        worldPoint: Offset,
+        targetScale: Float,
+        viewport: Size,
+        anchorY: Float = 0.5f,
+    ) {
         val next = targetScale.coerceIn(MIN_SCALE, MAX_SCALE)
-        val centred = Offset(viewport.width / 2f, viewport.height / 2f) - worldPoint * next
+        val anchor = Offset(viewport.width / 2f, viewport.height * anchorY)
         scale = next
-        offset = constrain(centred, next, viewport)
+        offset = constrain(anchor - worldPoint * next, next, viewport)
     }
 
     fun worldToScreen(world: Offset): Offset = world * scale + offset

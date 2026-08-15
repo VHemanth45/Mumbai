@@ -1,0 +1,95 @@
+# The curated list: which places belong in the catalog.
+#
+# This is the one part of the dataset a person chose, carried over from the
+# hand-authored seed this pipeline replaced. Its value was never the numbers —
+# those were typed from memory and were a median 339 m out, up to 2.6 km — it
+# was knowing that Chor Bazaar and Sassoon Docks belong in a catalog of Mumbai
+# and that a well-mapped mid-tier restaurant does not. OSM has no signal for
+# that and never will.
+#
+# So the name and the category come from here, and everything else — the
+# coordinate, the description, the locality — comes from OpenStreetMap and
+# boundary.geojson. The hint coordinate is NOT used as output. It only picks
+# between same-named OSM records, of which Mumbai has many.
+#
+# name<TAB>category<TAB>hint_lat<TAB>hint_lon
+Gateway of India	TOURIST	18.9220	72.8347
+Marine Drive	TOURIST	18.9430	72.8238
+Chhatrapati Shivaji Maharaj Terminus	TOURIST	18.9398	72.8355
+Haji Ali Dargah	TOURIST	18.9827	72.8090
+Juhu Beach	TOURIST	19.0968	72.8265
+Siddhivinayak Temple	TOURIST	19.0169	72.8302
+Elephanta Caves	TOURIST	18.9633	72.9315
+Bandra Fort	TOURIST	19.0430	72.8190
+Kala Ghoda	TOURIST	18.9285	72.8324
+Girgaon Chowpatty	TOURIST	18.9548	72.8155
+Worli Sea Face	TOURIST	19.0000	72.8150
+Bandstand Promenade	TOURIST	19.0480	72.8190
+Mount Mary Basilica	TOURIST	19.0448	72.8244
+Mahalaxmi Temple	TOURIST	18.9779	72.8090
+Global Vipassana Pagoda	TOURIST	19.2340	72.8100
+Flora Fountain	TOURIST	18.9322	72.8317
+Rajabai Clock Tower	TOURIST	18.9295	72.8305
+Colaba Causeway	TOURIST	18.9150	72.8258
+Versova Beach	TOURIST	19.1350	72.8120
+Powai Lake	TOURIST	19.1270	72.9050
+Leopold Cafe	CAFE	18.9224	72.8317
+Cafe Mondegar	CAFE	18.9218	72.8320
+Kala Ghoda Cafe	CAFE	18.9287	72.8322
+Prithvi Cafe	CAFE	19.1090	72.8270
+Yazdani Bakery	CAFE	18.9332	72.8340
+Kyani & Co.	CAFE	18.9470	72.8250
+Cafe Madras	CAFE	19.0250	72.8560
+Blue Tokai Coffee Roasters	CAFE	19.0600	72.8300
+Subko Coffee	CAFE	19.0620	72.8290
+Koinonia Coffee Roasters	CAFE	19.0700	72.8320
+Cafe Zoe	CAFE	18.9950	72.8250
+The Nutcracker	CAFE	18.9290	72.8320
+Grandmama's Cafe	CAFE	19.0560	72.8330
+Doolally Taproom	CAFE	19.0620	72.8340
+Britannia & Co.	RESTAURANT	18.9340	72.8390
+Trishna	RESTAURANT	18.9282	72.8320
+Bademiya	RESTAURANT	18.9210	72.8310
+Mahesh Lunch Home	RESTAURANT	18.9290	72.8330
+Swati Snacks	RESTAURANT	18.9700	72.8110
+Shree Thaker Bhojanalay	RESTAURANT	18.9520	72.8300
+The Bombay Canteen	RESTAURANT	18.9950	72.8240
+Bastian	RESTAURANT	19.0640	72.8320
+Gajalee	RESTAURANT	19.1150	72.8340
+Olive Bar & Kitchen	RESTAURANT	19.0680	72.8230
+Noor Mohammadi Hotel	RESTAURANT	18.9600	72.8280
+Ram Ashraya	RESTAURANT	19.0270	72.8560
+Aaswad	RESTAURANT	19.0210	72.8420
+Highway Gomantak	RESTAURANT	19.0730	72.8390
+Sanjay Gandhi National Park	PARK	19.2147	72.9106
+Hanging Gardens	PARK	18.9567	72.8050
+Kamala Nehru Park	PARK	18.9560	72.8043
+Shivaji Park	PARK	19.0280	72.8370
+Priyadarshini Park	PARK	18.9560	72.7950
+Maharashtra Nature Park	PARK	19.0480	72.8560
+Five Gardens	PARK	19.0180	72.8450
+Joggers Park	PARK	19.0570	72.8230
+Horniman Circle Gardens	PARK	18.9330	72.8360
+Sagar Upvan Garden	PARK	18.9080	72.8180
+Veermata Jijabai Bhosale Udyan	PARK	18.9790	72.8340
+Chhatrapati Shivaji Maharaj Vastu Sangrahalaya	CULTURE	18.9269	72.8328
+Jehangir Art Gallery	CULTURE	18.9276	72.8317
+Dr. Bhau Daji Lad Museum	CULTURE	18.9788	72.8342
+Mani Bhavan Gandhi Museum	CULTURE	18.9600	72.8100
+Asiatic Society Library	CULTURE	18.9330	72.8360
+Royal Opera House	CULTURE	18.9560	72.8180
+National Centre for the Performing Arts	CULTURE	18.9230	72.8200
+Prithvi Theatre	CULTURE	19.1090	72.8272
+Kanheri Caves	CULTURE	19.2080	72.9060
+Nehru Science Centre	CULTURE	19.0000	72.8280
+Nehru Planetarium	CULTURE	18.9900	72.8180
+Keneseth Eliyahoo Synagogue	CULTURE	18.9280	72.8320
+Banganga Tank	HIDDEN_GEM	18.9455	72.7943
+Khotachiwadi	HIDDEN_GEM	18.9560	72.8210
+Sassoon Docks	HIDDEN_GEM	18.9130	72.8320
+Gilbert Hill	HIDDEN_GEM	19.1350	72.8360
+Sewri Mudflats	HIDDEN_GEM	18.9970	72.8620
+Worli Village & Fort	HIDDEN_GEM	19.0100	72.8130
+Afghan Church	HIDDEN_GEM	18.9060	72.8140
+Chor Bazaar	HIDDEN_GEM	18.9600	72.8300
+Mahalaxmi Dhobi Ghat	HIDDEN_GEM	18.9772	72.8226

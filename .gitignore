@@ -26,3 +26,9 @@ local.properties
 /.venv-osm/
 /build/osm-mumbai.pickle
 /build/extract.log
+.agents/
+.claude/
+
+# Overture Places raw extract (309 MB) - re-downloadable, not committed
+data/*.geojson
+data/*.db

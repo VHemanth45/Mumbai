@@ -186,11 +186,21 @@ class MockMumbaiGeometryProvider : CityGeometryProvider {
 
         val mumbai = CityGeometry(
             cityId = MumbaiSeed.CITY_ID,
-            // Derived from the geometry itself, so editing the outline can never
-            // leave the camera framing stale.
-            bounds = GeoBounds.around(
-                mainland + elephantaIsland + roads.flatten(),
-                paddingFraction = 0.05,
+            // The same rectangle `tools/extract_osm.py` crops the real asset to,
+            // rather than bounds derived from this outline.
+            //
+            // It used to be derived, so that editing the outline could not leave
+            // the camera framing stale. That was right while the catalog was 177
+            // places in the middle of the city and wrong now it is every place
+            // OpenStreetMap has mapped: a hand-drawn silhouette does not reach
+            // as far as the catalog does, and the places past its edge would
+            // have been projected outside the canvas. Framing the extract's box
+            // also means falling back to this outline does not move the city.
+            bounds = GeoBounds(
+                minLatitude = 18.860,
+                minLongitude = 72.750,
+                maxLatitude = 19.300,
+                maxLongitude = 73.010,
             ),
             shapes = buildList {
                 add(CityShape.of(ShapeKind.LAND, mainland))

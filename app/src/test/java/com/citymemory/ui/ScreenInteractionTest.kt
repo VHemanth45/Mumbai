@@ -21,7 +21,9 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.citymemory.data.local.database.CityMemoryDatabase
 import com.citymemory.data.local.seed.DatabaseSeeder
+import com.citymemory.SeedPlaces
 import com.citymemory.data.repository.PlaceRepositoryImpl
+import com.citymemory.domain.model.PlaceCategory
 import com.citymemory.domain.repository.PlaceRepository
 import com.citymemory.ui.navigation.Screen
 import com.citymemory.ui.screens.discover.DiscoverScreen
@@ -61,6 +63,10 @@ class ScreenInteractionTest {
 
     private lateinit var database: CityMemoryDatabase
     private lateinit var repository: PlaceRepository
+
+    /** The catalog is generated, so tests name places through the fixture. */
+    private val subject = SeedPlaces.shortNamed
+    private val firstName = subject.name
     private val navigationLauncher = RecordingNavigationLauncher()
 
     @Before
@@ -69,7 +75,7 @@ class ScreenInteractionTest {
         database = Room.inMemoryDatabaseBuilder(context, CityMemoryDatabase::class.java)
             .allowMainThreadQueries()
             .build()
-        repository = PlaceRepositoryImpl(database, DatabaseSeeder(database))
+        repository = PlaceRepositoryImpl(database, DatabaseSeeder(database, SeedPlaces.catalog))
     }
 
     @After
@@ -130,37 +136,41 @@ class ScreenInteractionTest {
     fun `discover lists the seeded catalog`() {
         showDiscover()
 
-        awaitText("Gateway of India")
-        compose.onNodeWithText("Gateway of India").assertIsDisplayed()
-        compose.onNodeWithText("80 places waiting to be found").assertIsDisplayed()
+        awaitText(firstName)
+        compose.onNodeWithText(firstName).assertIsDisplayed()
+        compose.onNodeWithText("${SeedPlaces.total} places waiting to be found")
+            .assertIsDisplayed()
     }
 
     @Test
     fun `searching narrows the catalog to matching places`() {
         showDiscover()
-        awaitText("Gateway of India")
+        awaitText(firstName)
 
-        compose.onNode(hasSetTextAction()).performTextInput("banganga")
+        val other = SeedPlaces.of(PlaceCategory.CULTURE)
+        compose.onNode(hasSetTextAction()).performTextInput(other.name)
 
-        awaitText("Banganga Tank")
-        assertEquals(0, matches("Gateway of India"))
+        awaitText(other.name)
+        assertEquals(0, matches(firstName))
     }
 
     @Test
     fun `search also matches a place description`() {
         showDiscover()
-        awaitText("Gateway of India")
+        awaitText(firstName)
 
-        compose.onNode(hasSetTextAction()).performTextInput("flamingo")
+        // "hectares" only ever appears in a park's generated description, and
+        // never in any place's name.
+        compose.onNode(hasSetTextAction()).performTextInput("hectares")
 
-        awaitText("Sewri Mudflats")
-        assertEquals(0, matches("Gateway of India"))
+        awaitText(SeedPlaces.name(PlaceCategory.PARK))
+        assertEquals(0, matches(firstName))
     }
 
     @Test
     fun `a search with no matches shows the empty state`() {
         showDiscover()
-        awaitText("Gateway of India")
+        awaitText(firstName)
 
         compose.onNode(hasSetTextAction()).performTextInput("zzzznotaplace")
 
@@ -172,23 +182,23 @@ class ScreenInteractionTest {
     fun `tapping a place card reports its id for navigation`() {
         var opened: String? = null
         showDiscover(onPlaceClick = { opened = it })
-        awaitText("Gateway of India")
+        awaitText(firstName)
 
-        compose.onNodeWithText("Gateway of India").performClick()
+        compose.onNodeWithText(firstName).performClick()
         compose.waitForIdle()
 
-        assertEquals("gateway-of-india", opened)
+        assertEquals(subject.id, opened)
     }
 
     @Test
     fun `the wishlist toggle flips its own accessibility label`() {
         showDiscover()
-        awaitText("Gateway of India")
+        awaitText(firstName)
 
-        compose.onNodeWithContentDescription("Add Gateway of India to wishlist").performClick()
+        compose.onNodeWithContentDescription("Add $firstName to wishlist").performClick()
 
         compose.waitUntil(timeoutMillis = 20_000) {
-            compose.onAllNodesWithContentDescription("Remove Gateway of India from wishlist")
+            compose.onAllNodesWithContentDescription("Remove $firstName from wishlist")
                 .fetchSemanticsNodes().isNotEmpty()
         }
     }
@@ -197,10 +207,10 @@ class ScreenInteractionTest {
 
     @Test
     fun `marking a place visited flips the primary action to explored`() {
-        showDetail("marine-drive")
+        showDetail(subject.id)
 
         awaitText("Mark as Visited")
-        compose.onNodeWithText("Marine Drive").assertIsDisplayed()
+        compose.onNodeWithText(firstName).assertIsDisplayed()
 
         compose.onNodeWithText("Mark as Visited").performClick()
 
@@ -210,21 +220,26 @@ class ScreenInteractionTest {
 
     @Test
     fun `the navigate button hands off to the launcher with the right coordinates`() {
-        showDetail("gateway-of-india")
+        val place = subject
+        showDetail(place.id)
         awaitText("Navigate")
 
         compose.onNodeWithText("Navigate").performClick()
         compose.waitForIdle()
 
         assertEquals(
-            listOf(RecordingNavigationLauncher.Call(18.9220, 72.8347, "Gateway of India")),
+            listOf(
+                RecordingNavigationLauncher.Call(
+                    place.latitude, place.longitude, place.name,
+                ),
+            ),
             navigationLauncher.calls,
         )
     }
 
     @Test
     fun `wishlisting from detail updates the button label`() {
-        showDetail("juhu-beach")
+        showDetail(SeedPlaces.id(PlaceCategory.PARK))
 
         awaitText("Wishlist")
         compose.onNodeWithText("Wishlist").performClick()
@@ -244,23 +259,25 @@ class ScreenInteractionTest {
 
     @Test
     fun `wishlist lists saved places and removing one empties it again`(): Unit = runBlocking {
-        repository.setWishlisted("elephanta-caves", true)
+        repository.setWishlisted(SeedPlaces.id(PlaceCategory.CULTURE), true)
 
         showWishlist()
 
-        awaitText("Elephanta Caves")
+        awaitText(SeedPlaces.name(PlaceCategory.CULTURE))
         compose.onNodeWithText("TO EXPLORE").assertIsDisplayed()
         compose.onNodeWithText("1 place saved").assertIsDisplayed()
 
-        compose.onNodeWithContentDescription("Remove Elephanta Caves from wishlist").performClick()
+        compose.onNodeWithContentDescription(
+            "Remove ${SeedPlaces.name(PlaceCategory.CULTURE)} from wishlist",
+        ).performClick()
 
         awaitText("Nothing saved yet")
     }
 
     @Test
     fun `a visited wishlist place moves to the explored section`(): Unit = runBlocking {
-        repository.setWishlisted("haji-ali", true)
-        repository.setVisited("haji-ali", true)
+        repository.setWishlisted(SeedPlaces.id(PlaceCategory.TOURIST, 1), true)
+        repository.setVisited(SeedPlaces.id(PlaceCategory.TOURIST, 1), true)
 
         showWishlist()
 
@@ -271,31 +288,41 @@ class ScreenInteractionTest {
     // -- Progress -----------------------------------------------------------
 
     @Test
-    fun `progress starts at zero and reflects a visit`(): Unit = runBlocking {
+    fun `progress starts at zero and reflects visits`(): Unit = runBlocking {
         showProgress()
 
-        awaitText("0 / 80 Places")
+        awaitText("0 / ${SeedPlaces.total} Places")
         compose.onNodeWithText("0%").assertIsDisplayed()
         compose.onNodeWithText("Explorer Level 1").assertIsDisplayed()
 
-        repository.setVisited("gateway-of-india", true)
+        // Several visits, not one: the headline percentage is rounded down, and
+        // a single place in a catalog this size does not reach a whole percent.
+        val visits = 5
+        SeedPlaces.ids(PlaceCategory.TOURIST, visits).forEach {
+            repository.setVisited(it, true)
+        }
 
-        awaitText("1 / 80 Places")
-        compose.onNodeWithText("1%").assertIsDisplayed()
-        // Tourist Places is the first category row and now has one visit.
-        compose.onNodeWithText("1 / 20").assertIsDisplayed()
+        awaitText("$visits / ${SeedPlaces.total} Places")
+        compose.onNodeWithText("${visits * 100 / SeedPlaces.total}%").assertIsDisplayed()
+
+        // Tourist Places is the first category row, and the visited places are
+        // tourist ones, so that row is the one that moved. It sits below the
+        // fold, so scroll to it rather than assuming where the page ends.
+        val touristRow = "$visits / ${SeedPlaces.countOf(PlaceCategory.TOURIST)}"
+        compose.onNode(hasScrollAction()).performScrollToNode(hasText(touristRow))
+        compose.onNodeWithText(touristRow).assertIsDisplayed()
     }
 
     @Test
     fun `achievements unlock from state alone`(): Unit = runBlocking {
         showProgress()
-        awaitText("0 / 80 Places")
+        awaitText("0 / ${SeedPlaces.total} Places")
 
         compose.onNode(hasScrollAction())
             .performScrollToNode(hasText("ACHIEVEMENTS", substring = true))
         compose.onNodeWithText("ACHIEVEMENTS  ·  0/5").assertIsDisplayed()
 
-        repository.setVisited("gateway-of-india", true)
+        repository.setVisited(subject.id, true)
 
         awaitText("ACHIEVEMENTS  ·  1/5")
     }

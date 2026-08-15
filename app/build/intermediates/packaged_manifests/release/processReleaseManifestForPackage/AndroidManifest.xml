@@ -13,6 +13,26 @@
       delegated to whatever maps app the user already has, via an implicit Intent.
     -->
 
+
+    <!--
+      Location is optional and asked for only when the user taps "use my
+      location" while adding a place they are standing in. It does not weaken
+      the offline claim above: a GPS fix comes from satellites and needs no
+      network, which is exactly why the platform LocationManager is used here
+      rather than Play services' fused provider.
+
+      Both are declared because Android 12 and later let the user grant the
+      approximate one instead; the app accepts either and lets them drag the
+      ring the rest of the way.
+    -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+    <!-- The app works without a GPS receiver; it just cannot offer the shortcut. -->
+    <uses-feature
+        android:name="android.hardware.location.gps"
+        android:required="false" />
+
     <queries>
 
         <!-- Lets us detect a geo:-capable app before falling back to a web URI. -->

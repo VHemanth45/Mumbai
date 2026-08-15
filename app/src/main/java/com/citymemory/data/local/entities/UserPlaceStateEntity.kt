@@ -10,6 +10,10 @@ import androidx.room.PrimaryKey
  *
  * Rows are sparse. A place the user has never touched simply has no row here,
  * which keeps "untouched" and "explicitly un-marked" the same thing.
+ *
+ * [rating] and [note] are the user's own verdict on a place, and are kept
+ * independent of [isVisited]: un-marking a visit is an undo of the visit, not a
+ * reason to throw away what they wrote about it.
  */
 @Entity(
     tableName = "user_place_state",
@@ -28,4 +32,8 @@ data class UserPlaceStateEntity(
     val isWishlisted: Boolean = false,
     val visitedAt: Long? = null,
     val wishlistedAt: Long? = null,
+    /** 1..5, or null for "not rated". Never 0 — that would be a rating. */
+    val rating: Int? = null,
+    /** The user's own words. Null and blank both mean "nothing written". */
+    val note: String? = null,
 )

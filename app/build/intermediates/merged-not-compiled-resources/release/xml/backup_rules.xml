@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Pre-Android 12 equivalent of data_extraction_rules.xml. -->
+<!--
+  Pre-Android 12 equivalent of data_extraction_rules.xml.
+
+  Photos are left out here for the same reason they are left out of cloud backup
+  there: this is the 25 MB-quota path, and an over-quota backup takes the
+  exploration history with it. It is safe *because* it names `database`
+  explicitly — an empty rule set would back up everything, photos included.
+-->
 <full-backup-content>
     <include domain="database" path="." />
 </full-backup-content>

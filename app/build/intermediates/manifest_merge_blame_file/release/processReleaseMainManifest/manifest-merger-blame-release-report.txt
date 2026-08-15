@@ -13,174 +13,201 @@
 13      delegated to whatever maps app the user already has, via an implicit Intent.
 14    -->
 15
-16    <queries>
-16-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:9:5-19:15
-17
-18        <!-- Lets us detect a geo:-capable app before falling back to a web URI. -->
-19        <intent>
-19-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:11:9-14:18
-20            <action android:name="android.intent.action.VIEW" />
-20-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:12:13-65
-20-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:12:21-62
-21
-22            <data android:scheme="geo" />
-22-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:13:13-42
-22-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:13:19-39
-23        </intent>
-24        <intent>
-24-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:15:9-18:18
-25            <action android:name="android.intent.action.VIEW" />
-25-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:12:13-65
-25-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:12:21-62
-26
-27            <data android:scheme="https" />
-27-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:13:13-42
-27-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:13:19-39
-28        </intent>
-29    </queries>
+16
+17    <!--
+18      Location is optional and asked for only when the user taps "use my
+19      location" while adding a place they are standing in. It does not weaken
+20      the offline claim above: a GPS fix comes from satellites and needs no
+21      network, which is exactly why the platform LocationManager is used here
+22      rather than Play services' fused provider.
+23
+24      Both are declared because Android 12 and later let the user grant the
+25      approximate one instead; the app accepts either and lets them drag the
+26      ring the rest of the way.
+27    -->
+28    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+28-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:20:5-79
+28-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:20:22-76
+29    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+29-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:21:5-81
+29-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:21:22-78
 30
-31    <permission
-31-->[androidx.core:core:1.16.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/f90db1c0f985a3814bfe4daad56cccb0/transformed/core-1.16.0/AndroidManifest.xml:22:5-24:47
-32        android:name="com.citymemory.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
-32-->[androidx.core:core:1.16.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/f90db1c0f985a3814bfe4daad56cccb0/transformed/core-1.16.0/AndroidManifest.xml:23:9-81
-33        android:protectionLevel="signature" />
-33-->[androidx.core:core:1.16.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/f90db1c0f985a3814bfe4daad56cccb0/transformed/core-1.16.0/AndroidManifest.xml:24:9-44
-34
-35    <uses-permission android:name="com.citymemory.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
-35-->[androidx.core:core:1.16.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/f90db1c0f985a3814bfe4daad56cccb0/transformed/core-1.16.0/AndroidManifest.xml:26:5-97
-35-->[androidx.core:core:1.16.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/f90db1c0f985a3814bfe4daad56cccb0/transformed/core-1.16.0/AndroidManifest.xml:26:22-94
-36
-37    <application
-37-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:21:5-51:19
-38        android:name="com.citymemory.CityMemoryApplication"
-38-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:22:9-46
-39        android:allowBackup="true"
-39-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:23:9-35
-40        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
-40-->[androidx.core:core:1.16.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/f90db1c0f985a3814bfe4daad56cccb0/transformed/core-1.16.0/AndroidManifest.xml:28:18-86
-41        android:dataExtractionRules="@xml/data_extraction_rules"
-41-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:24:9-65
-42        android:extractNativeLibs="false"
-43        android:fullBackupContent="@xml/backup_rules"
-43-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:25:9-54
-44        android:icon="@mipmap/ic_launcher"
-44-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:26:9-43
-45        android:label="@string/app_name"
-45-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:27:9-41
-46        android:roundIcon="@mipmap/ic_launcher_round"
-46-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:28:9-54
-47        android:supportsRtl="true"
-47-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:29:9-35
-48        android:theme="@style/Theme.CityMemory" >
-48-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:30:9-48
-49
-50        <!--
-51          configChanges: this is a Compose-only Activity, so it can absorb
-52          configuration changes itself rather than being torn down and rebuilt.
-53          That matters more here than in most apps — a rotation would otherwise
-54          re-inflate the whole tree and re-run the map's projection of ~387,000
-55          points, which is most of a second on a mid-range phone.
-56        -->
-57        <activity
-57-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:39:9-50:20
-58            android:name="com.citymemory.MainActivity"
-58-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:40:13-41
-59            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|density|fontScale|uiMode|layoutDirection|locale"
-59-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:41:13-154
-60            android:exported="true"
-60-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:42:13-36
-61            android:resizeableActivity="true"
-61-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:43:13-46
-62            android:theme="@style/Theme.CityMemory"
-62-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:44:13-52
-63            android:windowSoftInputMode="adjustResize" >
-63-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:45:13-55
-64            <intent-filter>
-64-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:46:13-49:29
-65                <action android:name="android.intent.action.MAIN" />
-65-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:47:17-69
-65-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:47:25-66
-66
-67                <category android:name="android.intent.category.LAUNCHER" />
-67-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:48:17-77
-67-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:48:27-74
-68            </intent-filter>
-69        </activity>
-70
-71        <provider
-71-->[androidx.emoji2:emoji2:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/5b56a18e8f3d11c95a6c15eaea66d772/transformed/emoji2-1.4.0/AndroidManifest.xml:24:9-32:20
-72            android:name="androidx.startup.InitializationProvider"
-72-->[androidx.emoji2:emoji2:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/5b56a18e8f3d11c95a6c15eaea66d772/transformed/emoji2-1.4.0/AndroidManifest.xml:25:13-67
-73            android:authorities="com.citymemory.androidx-startup"
-73-->[androidx.emoji2:emoji2:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/5b56a18e8f3d11c95a6c15eaea66d772/transformed/emoji2-1.4.0/AndroidManifest.xml:26:13-68
-74            android:exported="false" >
-74-->[androidx.emoji2:emoji2:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/5b56a18e8f3d11c95a6c15eaea66d772/transformed/emoji2-1.4.0/AndroidManifest.xml:27:13-37
-75            <meta-data
-75-->[androidx.emoji2:emoji2:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/5b56a18e8f3d11c95a6c15eaea66d772/transformed/emoji2-1.4.0/AndroidManifest.xml:29:13-31:52
-76                android:name="androidx.emoji2.text.EmojiCompatInitializer"
-76-->[androidx.emoji2:emoji2:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/5b56a18e8f3d11c95a6c15eaea66d772/transformed/emoji2-1.4.0/AndroidManifest.xml:30:17-75
-77                android:value="androidx.startup" />
-77-->[androidx.emoji2:emoji2:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/5b56a18e8f3d11c95a6c15eaea66d772/transformed/emoji2-1.4.0/AndroidManifest.xml:31:17-49
-78            <meta-data
-78-->[androidx.lifecycle:lifecycle-process:2.9.1] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/788a814b24109c036ae5bf792882fde3/transformed/lifecycle-process-2.9.1/AndroidManifest.xml:29:13-31:52
-79                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
-79-->[androidx.lifecycle:lifecycle-process:2.9.1] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/788a814b24109c036ae5bf792882fde3/transformed/lifecycle-process-2.9.1/AndroidManifest.xml:30:17-78
-80                android:value="androidx.startup" />
-80-->[androidx.lifecycle:lifecycle-process:2.9.1] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/788a814b24109c036ae5bf792882fde3/transformed/lifecycle-process-2.9.1/AndroidManifest.xml:31:17-49
-81            <meta-data
-81-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/59b4d81483ed699d1363182d5981e0b6/transformed/profileinstaller-1.4.0/AndroidManifest.xml:29:13-31:52
-82                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
-82-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/59b4d81483ed699d1363182d5981e0b6/transformed/profileinstaller-1.4.0/AndroidManifest.xml:30:17-85
-83                android:value="androidx.startup" />
-83-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/59b4d81483ed699d1363182d5981e0b6/transformed/profileinstaller-1.4.0/AndroidManifest.xml:31:17-49
-84        </provider>
-85
-86        <service
-86-->[androidx.room:room-runtime-android:2.7.2] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/c1c62bc1a711920976fb672513bd6d54/transformed/room-runtime-release/AndroidManifest.xml:24:9-28:63
-87            android:name="androidx.room.MultiInstanceInvalidationService"
-87-->[androidx.room:room-runtime-android:2.7.2] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/c1c62bc1a711920976fb672513bd6d54/transformed/room-runtime-release/AndroidManifest.xml:25:13-74
-88            android:directBootAware="true"
-88-->[androidx.room:room-runtime-android:2.7.2] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/c1c62bc1a711920976fb672513bd6d54/transformed/room-runtime-release/AndroidManifest.xml:26:13-43
-89            android:exported="false" />
-89-->[androidx.room:room-runtime-android:2.7.2] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/c1c62bc1a711920976fb672513bd6d54/transformed/room-runtime-release/AndroidManifest.xml:27:13-37
+31    <!-- The app works without a GPS receiver; it just cannot offer the shortcut. -->
+32    <uses-feature
+32-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:24:5-26:36
+33        android:name="android.hardware.location.gps"
+33-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:25:9-53
+34        android:required="false" />
+34-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:26:9-33
+35
+36    <queries>
+36-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:28:5-38:15
+37
+38        <!-- Lets us detect a geo:-capable app before falling back to a web URI. -->
+39        <intent>
+39-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:30:9-33:18
+40            <action android:name="android.intent.action.VIEW" />
+40-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:31:13-65
+40-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:31:21-62
+41
+42            <data android:scheme="geo" />
+42-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:32:13-42
+42-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:32:19-39
+43        </intent>
+44        <intent>
+44-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:34:9-37:18
+45            <action android:name="android.intent.action.VIEW" />
+45-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:31:13-65
+45-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:31:21-62
+46
+47            <data android:scheme="https" />
+47-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:32:13-42
+47-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:32:19-39
+48        </intent>
+49    </queries>
+50
+51    <permission
+51-->[androidx.core:core:1.16.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/f90db1c0f985a3814bfe4daad56cccb0/transformed/core-1.16.0/AndroidManifest.xml:22:5-24:47
+52        android:name="com.citymemory.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+52-->[androidx.core:core:1.16.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/f90db1c0f985a3814bfe4daad56cccb0/transformed/core-1.16.0/AndroidManifest.xml:23:9-81
+53        android:protectionLevel="signature" />
+53-->[androidx.core:core:1.16.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/f90db1c0f985a3814bfe4daad56cccb0/transformed/core-1.16.0/AndroidManifest.xml:24:9-44
+54
+55    <uses-permission android:name="com.citymemory.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
+55-->[androidx.core:core:1.16.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/f90db1c0f985a3814bfe4daad56cccb0/transformed/core-1.16.0/AndroidManifest.xml:26:5-97
+55-->[androidx.core:core:1.16.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/f90db1c0f985a3814bfe4daad56cccb0/transformed/core-1.16.0/AndroidManifest.xml:26:22-94
+56
+57    <application
+57-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:40:5-70:19
+58        android:name="com.citymemory.CityMemoryApplication"
+58-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:41:9-46
+59        android:allowBackup="true"
+59-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:42:9-35
+60        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
+60-->[androidx.core:core:1.16.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/f90db1c0f985a3814bfe4daad56cccb0/transformed/core-1.16.0/AndroidManifest.xml:28:18-86
+61        android:dataExtractionRules="@xml/data_extraction_rules"
+61-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:43:9-65
+62        android:extractNativeLibs="false"
+63        android:fullBackupContent="@xml/backup_rules"
+63-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:44:9-54
+64        android:icon="@mipmap/ic_launcher"
+64-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:45:9-43
+65        android:label="@string/app_name"
+65-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:46:9-41
+66        android:roundIcon="@mipmap/ic_launcher_round"
+66-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:47:9-54
+67        android:supportsRtl="true"
+67-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:48:9-35
+68        android:theme="@style/Theme.CityMemory" >
+68-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:49:9-48
+69
+70        <!--
+71          configChanges: this is a Compose-only Activity, so it can absorb
+72          configuration changes itself rather than being torn down and rebuilt.
+73          That matters more here than in most apps — a rotation would otherwise
+74          re-inflate the whole tree and re-run the map's projection of ~387,000
+75          points, which is most of a second on a mid-range phone.
+76        -->
+77        <activity
+77-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:58:9-69:20
+78            android:name="com.citymemory.MainActivity"
+78-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:59:13-41
+79            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|density|fontScale|uiMode|layoutDirection|locale"
+79-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:60:13-154
+80            android:exported="true"
+80-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:61:13-36
+81            android:resizeableActivity="true"
+81-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:62:13-46
+82            android:theme="@style/Theme.CityMemory"
+82-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:63:13-52
+83            android:windowSoftInputMode="adjustResize" >
+83-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:64:13-55
+84            <intent-filter>
+84-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:65:13-68:29
+85                <action android:name="android.intent.action.MAIN" />
+85-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:66:17-69
+85-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:66:25-66
+86
+87                <category android:name="android.intent.category.LAUNCHER" />
+87-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:67:17-77
+87-->/Users/mac/Documents/Mumbai/app/src/main/AndroidManifest.xml:67:27-74
+88            </intent-filter>
+89        </activity>
 90
-91        <receiver
-91-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/59b4d81483ed699d1363182d5981e0b6/transformed/profileinstaller-1.4.0/AndroidManifest.xml:34:9-52:20
-92            android:name="androidx.profileinstaller.ProfileInstallReceiver"
-92-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/59b4d81483ed699d1363182d5981e0b6/transformed/profileinstaller-1.4.0/AndroidManifest.xml:35:13-76
-93            android:directBootAware="false"
-93-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/59b4d81483ed699d1363182d5981e0b6/transformed/profileinstaller-1.4.0/AndroidManifest.xml:36:13-44
-94            android:enabled="true"
-94-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/59b4d81483ed699d1363182d5981e0b6/transformed/profileinstaller-1.4.0/AndroidManifest.xml:37:13-35
-95            android:exported="true"
-95-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/59b4d81483ed699d1363182d5981e0b6/transformed/profileinstaller-1.4.0/AndroidManifest.xml:38:13-36
-96            android:permission="android.permission.DUMP" >
-96-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/59b4d81483ed699d1363182d5981e0b6/transformed/profileinstaller-1.4.0/AndroidManifest.xml:39:13-57
-97            <intent-filter>
-97-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/59b4d81483ed699d1363182d5981e0b6/transformed/profileinstaller-1.4.0/AndroidManifest.xml:40:13-42:29
-98                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
-98-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/59b4d81483ed699d1363182d5981e0b6/transformed/profileinstaller-1.4.0/AndroidManifest.xml:41:17-91
-98-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/59b4d81483ed699d1363182d5981e0b6/transformed/profileinstaller-1.4.0/AndroidManifest.xml:41:25-88
-99            </intent-filter>
-100            <intent-filter>
-100-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/59b4d81483ed699d1363182d5981e0b6/transformed/profileinstaller-1.4.0/AndroidManifest.xml:43:13-45:29
-101                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
-101-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/59b4d81483ed699d1363182d5981e0b6/transformed/profileinstaller-1.4.0/AndroidManifest.xml:44:17-85
-101-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/59b4d81483ed699d1363182d5981e0b6/transformed/profileinstaller-1.4.0/AndroidManifest.xml:44:25-82
-102            </intent-filter>
-103            <intent-filter>
-103-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/59b4d81483ed699d1363182d5981e0b6/transformed/profileinstaller-1.4.0/AndroidManifest.xml:46:13-48:29
-104                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
-104-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/59b4d81483ed699d1363182d5981e0b6/transformed/profileinstaller-1.4.0/AndroidManifest.xml:47:17-88
-104-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/59b4d81483ed699d1363182d5981e0b6/transformed/profileinstaller-1.4.0/AndroidManifest.xml:47:25-85
-105            </intent-filter>
-106            <intent-filter>
-106-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/59b4d81483ed699d1363182d5981e0b6/transformed/profileinstaller-1.4.0/AndroidManifest.xml:49:13-51:29
-107                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
-107-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/59b4d81483ed699d1363182d5981e0b6/transformed/profileinstaller-1.4.0/AndroidManifest.xml:50:17-95
-107-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/59b4d81483ed699d1363182d5981e0b6/transformed/profileinstaller-1.4.0/AndroidManifest.xml:50:25-92
-108            </intent-filter>
-109        </receiver>
-110    </application>
-111
-112</manifest>
+91        <provider
+91-->[androidx.emoji2:emoji2:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/5b56a18e8f3d11c95a6c15eaea66d772/transformed/emoji2-1.4.0/AndroidManifest.xml:24:9-32:20
+92            android:name="androidx.startup.InitializationProvider"
+92-->[androidx.emoji2:emoji2:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/5b56a18e8f3d11c95a6c15eaea66d772/transformed/emoji2-1.4.0/AndroidManifest.xml:25:13-67
+93            android:authorities="com.citymemory.androidx-startup"
+93-->[androidx.emoji2:emoji2:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/5b56a18e8f3d11c95a6c15eaea66d772/transformed/emoji2-1.4.0/AndroidManifest.xml:26:13-68
+94            android:exported="false" >
+94-->[androidx.emoji2:emoji2:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/5b56a18e8f3d11c95a6c15eaea66d772/transformed/emoji2-1.4.0/AndroidManifest.xml:27:13-37
+95            <meta-data
+95-->[androidx.emoji2:emoji2:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/5b56a18e8f3d11c95a6c15eaea66d772/transformed/emoji2-1.4.0/AndroidManifest.xml:29:13-31:52
+96                android:name="androidx.emoji2.text.EmojiCompatInitializer"
+96-->[androidx.emoji2:emoji2:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/5b56a18e8f3d11c95a6c15eaea66d772/transformed/emoji2-1.4.0/AndroidManifest.xml:30:17-75
+97                android:value="androidx.startup" />
+97-->[androidx.emoji2:emoji2:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/5b56a18e8f3d11c95a6c15eaea66d772/transformed/emoji2-1.4.0/AndroidManifest.xml:31:17-49
+98            <meta-data
+98-->[androidx.lifecycle:lifecycle-process:2.9.1] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/788a814b24109c036ae5bf792882fde3/transformed/lifecycle-process-2.9.1/AndroidManifest.xml:29:13-31:52
+99                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
+99-->[androidx.lifecycle:lifecycle-process:2.9.1] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/788a814b24109c036ae5bf792882fde3/transformed/lifecycle-process-2.9.1/AndroidManifest.xml:30:17-78
+100                android:value="androidx.startup" />
+100-->[androidx.lifecycle:lifecycle-process:2.9.1] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/788a814b24109c036ae5bf792882fde3/transformed/lifecycle-process-2.9.1/AndroidManifest.xml:31:17-49
+101            <meta-data
+101-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/59b4d81483ed699d1363182d5981e0b6/transformed/profileinstaller-1.4.0/AndroidManifest.xml:29:13-31:52
+102                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
+102-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/59b4d81483ed699d1363182d5981e0b6/transformed/profileinstaller-1.4.0/AndroidManifest.xml:30:17-85
+103                android:value="androidx.startup" />
+103-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/59b4d81483ed699d1363182d5981e0b6/transformed/profileinstaller-1.4.0/AndroidManifest.xml:31:17-49
+104        </provider>
+105
+106        <service
+106-->[androidx.room:room-runtime-android:2.7.2] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/c1c62bc1a711920976fb672513bd6d54/transformed/room-runtime-release/AndroidManifest.xml:24:9-28:63
+107            android:name="androidx.room.MultiInstanceInvalidationService"
+107-->[androidx.room:room-runtime-android:2.7.2] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/c1c62bc1a711920976fb672513bd6d54/transformed/room-runtime-release/AndroidManifest.xml:25:13-74
+108            android:directBootAware="true"
+108-->[androidx.room:room-runtime-android:2.7.2] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/c1c62bc1a711920976fb672513bd6d54/transformed/room-runtime-release/AndroidManifest.xml:26:13-43
+109            android:exported="false" />
+109-->[androidx.room:room-runtime-android:2.7.2] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/c1c62bc1a711920976fb672513bd6d54/transformed/room-runtime-release/AndroidManifest.xml:27:13-37
+110
+111        <receiver
+111-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/59b4d81483ed699d1363182d5981e0b6/transformed/profileinstaller-1.4.0/AndroidManifest.xml:34:9-52:20
+112            android:name="androidx.profileinstaller.ProfileInstallReceiver"
+112-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/59b4d81483ed699d1363182d5981e0b6/transformed/profileinstaller-1.4.0/AndroidManifest.xml:35:13-76
+113            android:directBootAware="false"
+113-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/59b4d81483ed699d1363182d5981e0b6/transformed/profileinstaller-1.4.0/AndroidManifest.xml:36:13-44
+114            android:enabled="true"
+114-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/59b4d81483ed699d1363182d5981e0b6/transformed/profileinstaller-1.4.0/AndroidManifest.xml:37:13-35
+115            android:exported="true"
+115-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/59b4d81483ed699d1363182d5981e0b6/transformed/profileinstaller-1.4.0/AndroidManifest.xml:38:13-36
+116            android:permission="android.permission.DUMP" >
+116-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/59b4d81483ed699d1363182d5981e0b6/transformed/profileinstaller-1.4.0/AndroidManifest.xml:39:13-57
+117            <intent-filter>
+117-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/59b4d81483ed699d1363182d5981e0b6/transformed/profileinstaller-1.4.0/AndroidManifest.xml:40:13-42:29
+118                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
+118-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/59b4d81483ed699d1363182d5981e0b6/transformed/profileinstaller-1.4.0/AndroidManifest.xml:41:17-91
+118-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/59b4d81483ed699d1363182d5981e0b6/transformed/profileinstaller-1.4.0/AndroidManifest.xml:41:25-88
+119            </intent-filter>
+120            <intent-filter>
+120-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/59b4d81483ed699d1363182d5981e0b6/transformed/profileinstaller-1.4.0/AndroidManifest.xml:43:13-45:29
+121                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
+121-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/59b4d81483ed699d1363182d5981e0b6/transformed/profileinstaller-1.4.0/AndroidManifest.xml:44:17-85
+121-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/59b4d81483ed699d1363182d5981e0b6/transformed/profileinstaller-1.4.0/AndroidManifest.xml:44:25-82
+122            </intent-filter>
+123            <intent-filter>
+123-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/59b4d81483ed699d1363182d5981e0b6/transformed/profileinstaller-1.4.0/AndroidManifest.xml:46:13-48:29
+124                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
+124-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/59b4d81483ed699d1363182d5981e0b6/transformed/profileinstaller-1.4.0/AndroidManifest.xml:47:17-88
+124-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/59b4d81483ed699d1363182d5981e0b6/transformed/profileinstaller-1.4.0/AndroidManifest.xml:47:25-85
+125            </intent-filter>
+126            <intent-filter>
+126-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/59b4d81483ed699d1363182d5981e0b6/transformed/profileinstaller-1.4.0/AndroidManifest.xml:49:13-51:29
+127                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
+127-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/59b4d81483ed699d1363182d5981e0b6/transformed/profileinstaller-1.4.0/AndroidManifest.xml:50:17-95
+127-->[androidx.profileinstaller:profileinstaller:1.4.0] /Users/mac/Documents/Mumbai/.toolchain/gradle-home/caches/8.14.3/transforms/59b4d81483ed699d1363182d5981e0b6/transformed/profileinstaller-1.4.0/AndroidManifest.xml:50:25-92
+128            </intent-filter>
+129        </receiver>
+130    </application>
+131
+132</manifest>

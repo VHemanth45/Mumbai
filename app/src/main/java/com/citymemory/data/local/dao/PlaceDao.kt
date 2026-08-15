@@ -27,6 +27,33 @@ interface PlaceDao {
     @Query("SELECT COUNT(*) FROM places")
     suspend fun count(): Int
 
+    @Query("SELECT EXISTS(SELECT 1 FROM places WHERE id = :placeId)")
+    suspend fun exists(placeId: String): Boolean
+
+    /**
+     * Where a user-added place goes in the list: one before whatever is first.
+     *
+     * Null on an unseeded city, which the caller reads as zero. Places the user
+     * added themselves sort ahead of the catalog deliberately — the catalog is
+     * 3,191 rows deep and the one you typed in yourself should not be somewhere
+     * inside it.
+     */
+    @Query("SELECT MIN(displayOrder) FROM places WHERE cityId = :cityId")
+    suspend fun lowestDisplayOrder(cityId: String): Int?
+
+    @Upsert
+    suspend fun upsert(place: PlaceEntity)
+
+    /**
+     * Only ever called for a place the user added. Their state row goes with it
+     * through the foreign key's cascade.
+     */
+    @Query("DELETE FROM places WHERE id = :placeId AND isUserAdded = 1")
+    suspend fun deleteUserPlace(placeId: String)
+
+    @Query("UPDATE places SET address = :address WHERE id = :placeId")
+    suspend fun updateAddress(placeId: String, address: String?)
+
     /**
      * Upsert, not INSERT OR REPLACE: REPLACE is delete-then-insert in SQLite,
      * which would cascade through the user_place_state foreign key and silently

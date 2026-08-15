@@ -24,7 +24,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material.icons.outlined.BookmarkBorder
+import androidx.compose.material.icons.outlined.DeleteOutline
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.NearMe
 import androidx.compose.material.icons.outlined.SearchOff
@@ -34,6 +38,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
@@ -42,19 +48,25 @@ import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.citymemory.domain.model.Place
+import com.citymemory.domain.model.PlacePhoto
 import com.citymemory.ui.components.EmptyState
 import com.citymemory.ui.components.LoadingState
 import com.citymemory.ui.theme.CityNight
@@ -82,6 +94,17 @@ fun PlaceDetailScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val isAddingPhoto by viewModel.addingPhoto.collectAsStateWithLifecycle()
+    val photoError by viewModel.photoError.collectAsStateWithLifecycle()
+
+    // Surfaced rather than swallowed: from the user's side they picked a photo
+    // and nothing appeared, which reads as a broken screen not a bad file.
+    LaunchedEffect(photoError) {
+        photoError?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.onPhotoErrorShown()
+        }
+    }
 
     val navigateTo = rememberPlaceNavigator { message ->
         scope.launch { snackbarHostState.showSnackbar(message) }
@@ -130,6 +153,12 @@ fun PlaceDetailScreen(
                             }
                         }
                     },
+                    onAddressChange = viewModel::onAddressChanged,
+                    onDelete = { viewModel.onDeleteUserPlace(onDeleted = onBack) },
+                    photos = state.photos,
+                    isAddingPhoto = isAddingPhoto,
+                    onPhotoPicked = viewModel::onPhotoPicked,
+                    onDeletePhoto = viewModel::onDeletePhoto,
                 )
             }
         }
@@ -144,6 +173,12 @@ private fun PlaceDetailContent(
     onNavigate: () -> Unit,
     onToggleWishlist: () -> Unit,
     onToggleVisited: () -> Unit,
+    onAddressChange: (String) -> Unit,
+    onDelete: () -> Unit,
+    photos: List<PlacePhoto>,
+    isAddingPhoto: Boolean,
+    onPhotoPicked: (String) -> Unit,
+    onDeletePhoto: (String) -> Unit,
 ) {
     Column(
         Modifier
@@ -182,9 +217,32 @@ private fun PlaceDetailContent(
                 color = TextSecondary,
             )
 
+            if (place.hasReview) {
+                Spacer(Modifier.height(20.dp))
+                YourVerdict(place)
+            }
+
             Spacer(Modifier.height(20.dp))
 
-            LocationRow(place)
+            // Directly under the verdict, and above the address, because these
+            // two are the same thing: what *you* have to say about this place,
+            // as against what the extract has to say about it. The address and
+            // the coordinates are reference data and belong below them.
+            PlacePhotosSection(
+                photos = photos,
+                isAdding = isAddingPhoto,
+                onPhotoPicked = onPhotoPicked,
+                onDeletePhoto = onDeletePhoto,
+            )
+
+            Spacer(Modifier.height(24.dp))
+
+            LocationRow(place = place, onAddressChange = onAddressChange)
+
+            if (place.isUserAdded) {
+                Spacer(Modifier.height(12.dp))
+                RemovePlaceRow(name = place.name, onDelete = onDelete)
+            }
 
             Spacer(Modifier.height(28.dp))
 
@@ -373,8 +431,72 @@ private fun ExploredBadge(visitedAt: Long?) {
     }
 }
 
+/**
+ * What the user said about the place, back to them.
+ *
+ * Read-only here on purpose: the rating and the opinion are written on the
+ * Explore card, next to the map that flew you here, and having two places to
+ * edit the same sentence is how they end up disagreeing.
+ */
 @Composable
-private fun LocationRow(place: Place) {
+private fun YourVerdict(place: Place) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = GlowAmber.copy(alpha = 0.07f),
+        border = BorderStroke(1.dp, GlowAmber.copy(alpha = 0.22f)),
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            Text(
+                text = "YOUR VERDICT",
+                style = MaterialTheme.typography.labelSmall,
+                color = GlowAmber,
+            )
+
+            place.rating?.let { rating ->
+                Spacer(Modifier.height(8.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.semantics {
+                        contentDescription = "Rated $rating out of 5"
+                    },
+                ) {
+                    for (star in 1..5) {
+                        Icon(
+                            imageVector = if (star <= rating) {
+                                Icons.Filled.Star
+                            } else {
+                                Icons.Filled.StarBorder
+                            },
+                            contentDescription = null,
+                            tint = if (star <= rating) GlowAmber else TextTertiary.copy(alpha = 0.6f),
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Spacer(Modifier.width(2.dp))
+                    }
+                }
+            }
+
+            if (!place.note.isNullOrBlank()) {
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    text = place.note,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun LocationRow(place: Place, onAddressChange: (String) -> Unit) {
+    // The address is editable in place rather than behind an edit screen: it is
+    // one line, and the moment you want to fix it is the moment you are looking
+    // at it and can see it is wrong.
+    var editing by remember(place.id) { mutableStateOf(false) }
+    var draft by remember(place.id, place.address) { mutableStateOf(place.address.orEmpty()) }
+
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -382,31 +504,159 @@ private fun LocationRow(place: Place) {
     ) {
         Row(
             Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
+            verticalAlignment = Alignment.Top,
         ) {
             Icon(
                 imageVector = Icons.Outlined.LocationOn,
                 contentDescription = null,
                 tint = TextTertiary,
+                modifier = Modifier.size(18.dp).padding(top = 2.dp),
+            )
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = "Address",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = TextTertiary,
+                )
+                Spacer(Modifier.height(2.dp))
+
+                if (editing) {
+                    OutlinedTextField(
+                        value = draft,
+                        onValueChange = { draft = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = {
+                            Text("Street, area, pin code", color = TextTertiary)
+                        },
+                        singleLine = false,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = CitySurface,
+                            unfocusedContainerColor = CitySurface,
+                            focusedBorderColor = GlowAmber.copy(alpha = 0.5f),
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                            cursorColor = GlowAmber,
+                        ),
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(
+                            onClick = {
+                                onAddressChange(draft)
+                                editing = false
+                            },
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = GlowAmber,
+                                contentColor = Color.Black,
+                            ),
+                        ) {
+                            Text("Save")
+                        }
+                        OutlinedButton(
+                            onClick = {
+                                draft = place.address.orEmpty()
+                                editing = false
+                            },
+                            shape = RoundedCornerShape(12.dp),
+                        ) {
+                            Text("Cancel", color = TextSecondary)
+                        }
+                    }
+                } else {
+                    Text(
+                        text = place.address ?: "No address yet — add the one you went to",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (place.address != null) TextSecondary else TextTertiary,
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        text = String.format(
+                            Locale.getDefault(),
+                            "%.4f, %.4f",
+                            place.latitude,
+                            place.longitude,
+                        ),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = TextTertiary,
+                    )
+                }
+            }
+
+            if (!editing) {
+                IconButton(onClick = { editing = true }) {
+                    Icon(
+                        imageVector = Icons.Outlined.Edit,
+                        contentDescription = "Edit address",
+                        tint = TextTertiary,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Removing a place the user added.
+ *
+ * Only ever shown for [Place.isUserAdded]. There is no equivalent for a
+ * catalogued place: the catalog is regenerated from OpenStreetMap and a
+ * deletion would come back on the next update, so offering it would be a lie.
+ *
+ * Two taps rather than a dialog. The row arms itself, and stays armed only
+ * while the screen is composed, so leaving and coming back disarms it.
+ */
+@Composable
+private fun RemovePlaceRow(
+    name: String,
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var armed by remember(name) { mutableStateOf(false) }
+
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = CitySurface,
+    ) {
+        Row(
+            Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.DeleteOutline,
+                contentDescription = null,
+                tint = TextTertiary,
                 modifier = Modifier.size(18.dp),
             )
             Spacer(Modifier.width(12.dp))
-            Column {
+            Column(Modifier.weight(1f)) {
                 Text(
-                    text = "Location",
+                    text = "You added this place",
                     style = MaterialTheme.typography.labelSmall,
                     color = TextTertiary,
                 )
                 Text(
-                    text = String.format(
-                        Locale.getDefault(),
-                        "%.4f, %.4f",
-                        place.latitude,
-                        place.longitude,
-                    ),
+                    text = if (armed) "Remove it and everything you wrote?" else "Remove it",
                     style = MaterialTheme.typography.bodyMedium,
                     color = TextSecondary,
                 )
+            }
+            if (armed) {
+                OutlinedButton(onClick = onDelete, shape = RoundedCornerShape(12.dp)) {
+                    Text("Remove", color = MaterialTheme.colorScheme.error)
+                }
+            } else {
+                IconButton(onClick = { armed = true }) {
+                    Icon(
+                        imageVector = Icons.Outlined.DeleteOutline,
+                        contentDescription = "Remove ${'$'}name",
+                        tint = TextTertiary,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
             }
         }
     }
