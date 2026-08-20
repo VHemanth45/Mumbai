@@ -29,6 +29,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -39,6 +41,9 @@ import com.citymemory.domain.model.Achievement
 import com.citymemory.domain.model.CategoryProgress
 import com.citymemory.domain.model.ExplorationProgress
 import com.citymemory.ui.components.GlowProgressBar
+import com.citymemory.ui.components.explorationBarDescription
+import com.citymemory.ui.components.explorationHeadlineDescription
+import com.citymemory.ui.components.explorationHeadlineLabel
 import com.citymemory.ui.components.LoadingState
 import com.citymemory.ui.theme.CityNight
 import com.citymemory.ui.theme.CitySurface
@@ -134,15 +139,20 @@ private fun OverallCard(progress: ExplorationProgress, modifier: Modifier = Modi
                 )
                 .padding(20.dp),
         ) {
-            Row(verticalAlignment = Alignment.Bottom) {
+            Row(
+                verticalAlignment = Alignment.Bottom,
+                modifier = Modifier.semantics(mergeDescendants = true) {
+                    contentDescription = explorationHeadlineDescription(progress)
+                },
+            ) {
                 Text(
-                    text = "${progress.percent}%",
+                    text = "${progress.visitedCount}",
                     style = MaterialTheme.typography.displayMedium,
                     color = GlowCore,
                 )
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    text = "Explored",
+                    text = explorationHeadlineLabel(progress),
                     style = MaterialTheme.typography.titleMedium,
                     color = TextSecondary,
                     modifier = Modifier.padding(bottom = 6.dp),
@@ -152,22 +162,25 @@ private fun OverallCard(progress: ExplorationProgress, modifier: Modifier = Modi
             Spacer(Modifier.height(14.dp))
 
             GlowProgressBar(
-                fraction = progress.fraction,
+                fraction = progress.levelFraction,
                 height = 10.dp,
-                contentDescription = "${progress.percent} percent explored",
+                contentDescription = explorationBarDescription(progress),
             )
 
             Spacer(Modifier.height(12.dp))
 
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Text(
-                    text = "${progress.visitedCount} / ${progress.totalCount} Places",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = TextSecondary,
-                )
+            Row(Modifier.fillMaxWidth()) {
+                // Omitted rather than substituted when the map geometry has no
+                // areas — anything else here repeats the label above it.
+                if (progress.neighbourhoodTotal > 0) {
+                    Text(
+                        text = "${progress.neighbourhoodsExplored} of " +
+                            "${progress.neighbourhoodTotal} neighbourhoods",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextSecondary,
+                    )
+                }
+                Spacer(Modifier.weight(1f))
                 if (progress.wishlistCount > 0) {
                     Text(
                         text = "${progress.wishlistCount} wishlisted",

@@ -1,26 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.citymemory.ui.MapIdleProbeTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-08-15T10:41:44.569Z" hostname="Mac.lan" time="3.407">
+<testsuite name="com.citymemory.ui.MapIdleProbeTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-08-18T10:46:59.984Z" hostname="macs-MacBook-Pro.local" time="0.866">
   <properties/>
-  <testcase name="probeB_infiniteTransition_readInDrawBehind" classname="com.citymemory.ui.MapIdleProbeTest" time="2.502"/>
-  <testcase name="probeD_cityMapView_withVisitedPlaces" classname="com.citymemory.ui.MapIdleProbeTest" time="0.114"/>
-  <testcase name="probeF_projectionCompletesUnderWaitForIdle" classname="com.citymemory.ui.MapIdleProbeTest" time="0.551"/>
-  <testcase name="probeA_bareInfiniteTransition_readInComposition" classname="com.citymemory.ui.MapIdleProbeTest" time="0.049"/>
-  <testcase name="probeG_autoAdvanceFalse_infiniteTransitionLive" classname="com.citymemory.ui.MapIdleProbeTest" time="0.113"/>
-  <testcase name="probeE_cityMapView_flyAndPicking" classname="com.citymemory.ui.MapIdleProbeTest" time="0.05"/>
-  <testcase name="probeC_cityMapView_noPlaces" classname="com.citymemory.ui.MapIdleProbeTest" time="0.028"/>
-  <system-out><![CDATA[PROBE_B OK elapsed=353ms draws=0 clock=0
-PROBE_D1 OK elapsed=60ms clock=16
-PROBE_D2 nodes=1 desc=SemanticsConfiguration@5ae0f6df{ ContentDescription : [Map of the city. 2 of 3 places explored. Pinch to zoom into an explored area, double tap to jump in. Use the search box above to open a place.] }
-PROBE_F1 afterFirstWaitForIdle reports=1 elapsed=10ms clock=32
+  <testcase name="probeB_infiniteTransition_readInDrawBehind" classname="com.citymemory.ui.MapIdleProbeTest" time="0.095"/>
+  <testcase name="probeD_cityMapView_withVisitedPlaces" classname="com.citymemory.ui.MapIdleProbeTest" time="0.037"/>
+  <testcase name="probeF_projectionCompletesUnderWaitForIdle" classname="com.citymemory.ui.MapIdleProbeTest" time="0.537"/>
+  <testcase name="probeA_bareInfiniteTransition_readInComposition" classname="com.citymemory.ui.MapIdleProbeTest" time="0.04"/>
+  <testcase name="probeG_autoAdvanceFalse_infiniteTransitionLive" classname="com.citymemory.ui.MapIdleProbeTest" time="0.104"/>
+  <testcase name="probeE_cityMapView_flyAndPicking" classname="com.citymemory.ui.MapIdleProbeTest" time="0.03"/>
+  <testcase name="probeC_cityMapView_noPlaces" classname="com.citymemory.ui.MapIdleProbeTest" time="0.023"/>
+  <system-out><![CDATA[PROBE_B OK elapsed=75ms draws=0 clock=0
+PROBE_D1 OK elapsed=18ms clock=16
+PROBE_D2 nodes=1 desc=SemanticsConfiguration@419c6d1b{ ContentDescription : [Map of the city. 2 of 3 places explored. Pinch to zoom into an explored area, double tap to jump in. Use the search box above to open a place.] }
+PROBE_F1 afterFirstWaitForIdle reports=1 elapsed=5ms clock=32
 PROBE_F2 afterFiveMoreWaitForIdle reports=1
 PROBE_F3 afterSleep500 reports=1 clock=32
-PROBE_A OK elapsed=8ms clock=0
+PROBE_A OK elapsed=9ms clock=0
 PROBE_G distinctBreathValues=130 values=[0.97, 0.9702286, 0.9704572, 0.9706857, 0.9709143, 0.9711429, 0.9713715, 0.97160006, 0.9718286, 0.97205716, 0.97228575, 0.97251433, 0.9727429, 0.97297144, 0.9732, 0.9734286, 0.97365713, 0.9738858, 0.9741143, 0.9743428, 0.97457147, 0.9748, 0.97502863, 0.97525716, 0.9754857, 0.9757143, 0.97594285, 0.9761715, 0.9764, 0.97662854, 0.9768572, 0.97708577, 0.97731435, 0.9775429, 0.9777714, 0.97800004, 0.97822857, 0.9784572, 0.97868574, 0.97891426, 0.9791429, 0.9793714, 0.9796001, 0.9798286, 0.9800571, 0.98028576, 0.9805143, 0.98074293, 0.98097146, 0.9812, 0.9814286, 0.98165715, 0.98188573, 0.9821143, 0.98234284, 0.9825715, 0.9828, 0.9830286, 0.9832572, 0.9834857, 0.98371434, 0.98394287, 0.9841714, 0.98440003, 0.98462856, 0.9848572, 0.9850857, 0.9853143, 0.9855429, 0.9857714, 0.98600006, 0.9862286, 0.98645717, 0.98668575, 0.9869143, 0.9871429, 0.98737144, 0.9876, 0.9878286, 0.98805714, 0.9882858, 0.9885143, 0.9887429, 0.9889715, 0.9892, 0.98942864, 0.98965716, 0.98988575, 0.99011433, 0.99034286, 0.99057144, 0.9908, 0.99102855, 0.9912572, 0.9914857, 0.9917143, 0.9919429, 0.9921714, 0.99240005, 0.9926286, 0.99285716, 0.99308574, 0.99331427, 0.9935429, 0.99377143, 0.994, 0.9942286, 0.9944571, 0.99468577, 0.9949143, 0.9951429, 0.99537146, 0.9956, 0.9958286, 0.99605715, 0.99628574, 0.99651426, 0.99674284, 0.9969715, 0.9972, 0.9974286, 0.9976571, 0.9978857, 0.9981142, 0.9983429, 0.99857146, 0.9988, 0.99902856, 0.9992571, 0.9994857] clock=2080
 PROBE_G2 waitForIdleAfterReenable elapsed=2ms
-PROBE_E OK elapsed=25ms clock=752
-PROBE_C1 setContent+waitForIdle OK elapsed=7ms clock=32
+PROBE_E OK elapsed=15ms clock=752
+PROBE_C1 setContent+waitForIdle OK elapsed=6ms clock=48
 PROBE_C2 mapNodes=1
-PROBE_C3 second waitForIdle OK elapsed=7ms clock=32
+PROBE_C3 second waitForIdle OK elapsed=7ms clock=48
 ]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

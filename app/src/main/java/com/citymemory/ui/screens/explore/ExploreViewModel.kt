@@ -9,13 +9,21 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.citymemory.data.local.seed.MumbaiSeed
 import com.citymemory.di.appContainer
 import com.citymemory.domain.ExplorationSummarizer
+import com.citymemory.domain.Neighbourhoods
 import com.citymemory.domain.model.CityGeometry
 import com.citymemory.domain.model.ExplorationProgress
 import com.citymemory.domain.model.GeoPoint
 import com.citymemory.domain.model.Place
 import com.citymemory.domain.model.PlaceCategory
+import com.citymemory.domain.model.VisitSuggestion
+import com.citymemory.domain.model.VisitSuggestions
 import com.citymemory.domain.repository.CityGeometryProvider
 import com.citymemory.domain.repository.PlaceRepository
+import com.citymemory.data.dwell.DwellScheduler
+import com.citymemory.data.dwell.DwellStateStore
+import com.citymemory.data.photo.PhotoImportResult
+import com.citymemory.data.photo.PhotoVisitImporter
+import com.citymemory.util.VisitNotifier
 import com.citymemory.ui.map.FlyTarget
 import com.citymemory.util.LocationFix
 import com.citymemory.util.LocationSource
@@ -79,6 +87,9 @@ class ExploreViewModel(
     private val repository: PlaceRepository,
     private val geometryProvider: CityGeometryProvider,
     private val locationSource: LocationSource,
+    private val dwellStateStore: DwellStateStore,
+    private val photoVisitImporter: PhotoVisitImporter,
+    private val visitNotifier: VisitNotifier,
     private val cityId: String = MumbaiSeed.CITY_ID,
 ) : ViewModel() {
 
@@ -169,8 +180,12 @@ class ExploreViewModel(
             places = places,
             geometry = cityGeometry,
             // Derived here rather than stored, so the headline number can never
-            // disagree with the lights on the map.
-            progress = ExplorationSummarizer.progressOf(places),
+            // disagree with the lights on the map. The labels come along
+            // because the neighbourhood count is defined against them.
+            progress = ExplorationSummarizer.progressOf(
+                places,
+                Neighbourhoods.areasIn(cityGeometry.labels),
+            ),
             selectedPlace = places.firstOrNull { it.id == selectedId },
             searchQuery = query,
             // Searched off the same list the map draws, so a result's stars and
@@ -182,6 +197,114 @@ class ExploreViewModel(
         started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
         initialValue = ExploreUiState(),
     )
+
+    // -- Suggested visits ---------------------------------------------------
+
+    /**
+     * The questions waiting to be answered.
+     *
+     * Joined against [uiState]'s own place list rather than against a fresh
+     * read. `uiState` is a `StateFlow` that is already collected by this
+     * screen, so mapping it is free; observing the repository's place stream a
+     * second time would have Room re-run the 31,657-row catalog query on every
+     * visit, rating and wishlist change, for a list that is almost always empty.
+     */
+    val suggestions: StateFlow<List<VisitSuggestion>> = combine(
+        uiState.map { it.places }.distinctUntilChanged(),
+        repository.observePendingSuggestions(),
+    ) { places, pending ->
+        VisitSuggestions.join(places, pending)
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+        initialValue = emptyList(),
+    )
+
+    private val _autoLogEnabled = MutableStateFlow(dwellStateStore.isEnabled)
+    val autoLogEnabled: StateFlow<Boolean> = _autoLogEnabled.asStateFlow()
+
+    private val _importResult = MutableStateFlow<PhotoImportResult?>(null)
+
+    /** What the last photo import found, until the user has read it. */
+    val importResult: StateFlow<PhotoImportResult?> = _importResult.asStateFlow()
+
+    private val _isImporting = MutableStateFlow(false)
+    val isImporting: StateFlow<Boolean> = _isImporting.asStateFlow()
+
+    fun onSuggestionConfirmed(suggestion: VisitSuggestion) {
+        viewModelScope.launch {
+            repository.confirmSuggestion(suggestion.id)
+            clearNotificationIfAnswered()
+        }
+    }
+
+    fun onSuggestionDismissed(suggestion: VisitSuggestion) {
+        viewModelScope.launch {
+            repository.dismissSuggestion(suggestion.id)
+            clearNotificationIfAnswered()
+        }
+    }
+
+    /**
+     * Takes the notification down once the last question has been answered in
+     * the app — otherwise it sits in the shade pointing at a card that is no
+     * longer there.
+     */
+    private suspend fun clearNotificationIfAnswered() {
+        if (repository.pendingSuggestionCount() == 0) {
+            visitNotifier.clear(appContextHolder ?: return)
+        }
+    }
+
+    /**
+     * Switches the dwell detector on or off.
+     *
+     * The caller is responsible for having collected the permissions first —
+     * see `AutoLogPermissions`. This only records the decision and starts or
+     * stops the sampler, so a `true` that arrives without permission would
+     * schedule a worker that turns itself off again on its first run.
+     */
+    fun setAutoLogEnabled(context: Context, enabled: Boolean) {
+        appContextHolder = context.applicationContext
+        dwellStateStore.isEnabled = enabled
+        _autoLogEnabled.value = enabled
+        if (enabled) {
+            DwellScheduler.enable(context)
+        } else {
+            DwellScheduler.cancel(context)
+            // Dropped rather than kept: a stay that was in progress when the
+            // user switched this off is not something to resume from days later
+            // if they switch it back on.
+            dwellStateStore.clear()
+            visitNotifier.clear(context)
+        }
+    }
+
+    /** Reads the picked photographs and turns whatever it can into questions. */
+    fun onPhotosPicked(uris: List<String>) {
+        if (uris.isEmpty()) return
+        viewModelScope.launch {
+            _isImporting.value = true
+            _importResult.value = runCatching {
+                photoVisitImporter.import(cityId, uris)
+            }.getOrElse { PhotoImportResult(photosSeen = uris.size) }
+            _isImporting.value = false
+        }
+    }
+
+    fun onImportResultShown() {
+        _importResult.value = null
+    }
+
+    /**
+     * Held so a suggestion answered from the card can take the notification
+     * down. An application context, so it cannot leak an Activity.
+     */
+    private var appContextHolder: Context? = null
+
+    fun rememberContext(context: Context) {
+        appContextHolder = context.applicationContext
+    }
 
     fun onPlaceSelected(place: Place) {
         selectedPlaceId.value = place.id
@@ -401,6 +524,9 @@ class ExploreViewModel(
                 ExploreViewModel(
                     repository = appContainer.placeRepository,
                     geometryProvider = appContainer.cityGeometryProvider,
+                    dwellStateStore = appContainer.dwellStateStore,
+                    photoVisitImporter = appContainer.photoVisitImporter,
+                    visitNotifier = appContainer.visitNotifier,
                     locationSource = appContainer.locationSource,
                 )
             }

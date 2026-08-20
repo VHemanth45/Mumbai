@@ -538,6 +538,9 @@ private class MapRenderCache {
     val brushes = RevealBrushes()
     val layerPaint = Paint()
     val maskPaint = Paint().apply { blendMode = BlendMode.DstIn }
+
+    /** Alpha is set per frame — it is how far the heat field fades in by zoom. */
+    val heatPaint = Paint()
     val detail = DetailLevel()
     val reveals = ArrayList<Reveal>()
     private var pooled = ArrayList<Reveal>()
@@ -607,9 +610,8 @@ private class RevealBrushes {
     private var maskRadius = Float.NaN
     private var mask: Brush? = null
 
-    private var hazeRadius = Float.NaN
-    private var hazeAlpha = Float.NaN
-    private var haze: Brush? = null
+    private var heatRadius = Float.NaN
+    private var heat: Brush? = null
 
     /** Warm ground under the streets, so a lit area reads as illuminated. */
     fun wash(radius: Float): Brush {
@@ -650,22 +652,32 @@ private class RevealBrushes {
         }
     }
 
-    /** Atmospheric spill, reaching past the lit area itself. */
-    fun haze(radius: Float, alpha: Float): Brush {
-        val cached = haze
-        if (cached != null && hazeRadius == radius && hazeAlpha == alpha) return cached
+    /**
+     * One place's contribution to the heat field: a soft kernel, falling off
+     * to nothing at its edge.
+     *
+     * White rather than amber, and that matters. These are summed on top of
+     * each other, and summing a colour drives it towards white — eight visits
+     * around Bandra would turn the hue out from under the design. So the layer
+     * accumulates *density* in white, and the colour is painted through it
+     * once at the end. The map stays one hue however heavily it is explored;
+     * only the intensity moves.
+     */
+    fun heat(radius: Float): Brush {
+        val cached = heat
+        if (cached != null && heatRadius == radius) return cached
         return Brush.radialGradient(
-            colors = listOf(
-                MapStyle.LightHalo.copy(alpha = alpha),
-                MapStyle.LightHalo.copy(alpha = alpha * 0.25f),
-                Color.Transparent,
+            colorStops = arrayOf(
+                0.0f to Color.White,
+                0.35f to Color.White.copy(alpha = 0.55f),
+                0.70f to Color.White.copy(alpha = 0.16f),
+                1.0f to Color.Transparent,
             ),
             center = Offset.Zero,
             radius = radius,
         ).also {
-            haze = it
-            hazeRadius = radius
-            hazeAlpha = alpha
+            heat = it
+            heatRadius = radius
         }
     }
 }
@@ -698,6 +710,13 @@ private fun DrawScope.drawCity(
         drawLayers(paths, visible, lit = false, scale = scale, cache = cache, onlyReady = onlyReady)
     }
 
+    // The heat field has a floor in screen units, so at the overview it is a
+    // blob you can see rather than the four pixels 100 m works out to. Computed
+    // here because the cull below has to know about it: a place just off screen
+    // still spills heat onto it, and culling on the geographic radius alone
+    // would pop those blobs in and out at the edge as the map pans.
+    val heatRadius = max(revealRadius * scale * HALO_SPREAD, HEAT_MIN_RADIUS.toPx())
+
     val reveals = places.buildReveals(
         into = cache,
         projector = projector,
@@ -706,10 +725,11 @@ private fun DrawScope.drawCity(
         bloomingPlaceId = bloomingPlaceId,
         bloomProgress = bloomProgress,
         visible = visible,
+        cullMargin = heatRadius / scale,
     )
 
     if (reveals.isNotEmpty()) {
-        drawLitAreas(paths, camera, cache, reveals, viewport, onlyReady)
+        drawLitAreas(paths, camera, cache, reveals, viewport, onlyReady, heatRadius)
     }
 
     drawPlaces(
@@ -805,6 +825,12 @@ private fun List<Place>.buildReveals(
     bloomingPlaceId: String?,
     bloomProgress: Float,
     visible: Rect,
+    /**
+     * How far past its own radius a place can still affect the screen, in world
+     * units. The heat field reaches further than the lit disc does, so the two
+     * cannot share a cull.
+     */
+    cullMargin: Float,
 ): List<Reveal> {
     val reveals = into.reveals
     reveals.clear()
@@ -818,11 +844,99 @@ private fun List<Place>.buildReveals(
             1f
         }
         val r = radius * growth * breathing
-        if (center.x + r < visible.left || center.x - r > visible.right) continue
-        if (center.y + r < visible.top || center.y - r > visible.bottom) continue
+        val reach = max(r, cullMargin)
+        if (center.x + reach < visible.left || center.x - reach > visible.right) continue
+        if (center.y + reach < visible.top || center.y - reach > visible.bottom) continue
         reveals.add(into.reveal(center, r))
     }
     return reveals
+}
+
+/**
+ * The heat field: where *you* have been, as density rather than as dots.
+ *
+ * This is the layer that carries the map at the overview, and it replaced an
+ * atmospheric haze that could not. The haze was sized off the 100 m reveal, and
+ * at whole-city zoom the city is about 25 m to the pixel — so it drew a halo
+ * four pixels across, and twenty-two hard-won visits rendered as a scatter of
+ * specks on a black rectangle.
+ *
+ * Two things fix that, and they are the whole idea:
+ *
+ *  * **A floor in screen units.** [HEAT_MIN_RADIUS] is a size on the glass, not
+ *    a distance on the ground, so a place is always a legible blob however far
+ *    out you are. Zoomed in, the geographic radius overtakes the floor and the
+ *    field goes back to describing real ground.
+ *  * **Summing, not unioning.** Overlapping kernels add. One visit is an ember;
+ *    eight visits around one neighbourhood compound into something that reads
+ *    from across the city. That is the difference between a map of where places
+ *    exist and a map of where you keep going back to.
+ *
+ * Which also settles the zoom-tiering question without any tiers: at the
+ * overview neighbouring visits merge into one Bandra-sized glow, and zooming in
+ * separates them back into individual places, because that is simply what
+ * overlapping kernels do as the floor stops binding.
+ *
+ * The colour is applied once at the end rather than per kernel — see
+ * [RevealBrushes.heat] for why that is what keeps the map one hue.
+ */
+private fun DrawScope.drawHeat(
+    camera: MapCamera,
+    cache: MapRenderCache,
+    reveals: List<Reveal>,
+    viewport: Size,
+    radius: Float,
+) {
+    // Strongest at the overview, where it is the only thing saying "you have
+    // been here", and almost gone by street level, where the lit streets say it
+    // better and a wash of orange would only fog them.
+    val strength = lerp(HEAT_STRENGTH_FAR, HEAT_STRENGTH_NEAR, normalize(camera.scale, 1f, HEAT_FADE_SCALE))
+    if (strength < 0.01f) return
+
+    var left = Float.MAX_VALUE
+    var top = Float.MAX_VALUE
+    var right = -Float.MAX_VALUE
+    var bottom = -Float.MAX_VALUE
+    for (reveal in reveals) {
+        val center = camera.worldToScreen(reveal.center)
+        if (center.x - radius < left) left = center.x - radius
+        if (center.y - radius < top) top = center.y - radius
+        if (center.x + radius > right) right = center.x + radius
+        if (center.y + radius > bottom) bottom = center.y + radius
+    }
+    val bounds = Rect(left, top, right, bottom)
+        .intersectOrNull(Rect(Offset.Zero, viewport))
+        ?: return
+
+    val canvas = drawContext.canvas
+    val brush = cache.brushes.heat(radius)
+
+    canvas.saveLayer(bounds, cache.heatPaint.apply { alpha = strength })
+
+    for (reveal in reveals) {
+        val center = camera.worldToScreen(reveal.center)
+        translate(center.x, center.y) {
+            drawCircle(
+                brush = brush,
+                radius = radius,
+                center = Offset.Zero,
+                alpha = HEAT_PEAK_ALPHA,
+                blendMode = BlendMode.Plus,
+            )
+        }
+    }
+
+    // The layer now holds accumulated density in its alpha channel and nothing
+    // else. `SrcIn` paints the one colour through it, so intensity is the only
+    // thing that ever varies.
+    drawRect(
+        color = MapStyle.LightHalo,
+        topLeft = bounds.topLeft,
+        size = bounds.size,
+        blendMode = BlendMode.SrcIn,
+    )
+
+    canvas.restore()
 }
 
 /**
@@ -836,23 +950,12 @@ private fun DrawScope.drawLitAreas(
     reveals: List<Reveal>,
     viewport: Size,
     onlyReady: Boolean,
+    heatRadius: Float,
 ) {
     val scale = camera.scale
     val brushes = cache.brushes
 
-    // Haze belongs to the distant view: at the overview it is what tells you
-    // an area is lit at all, and by street level it would only fog the streets.
-    val haze = lerp(0.16f, 0.02f, normalize(scale, 1f, 10f))
-    if (haze > 0.01f) {
-        for (reveal in reveals) {
-            val center = camera.worldToScreen(reveal.center)
-            val radius = reveal.radius * scale * HALO_SPREAD
-            val brush = brushes.haze(radius, haze)
-            translate(center.x, center.y) {
-                drawCircle(brush = brush, radius = radius, center = Offset.Zero)
-            }
-        }
-    }
+    drawHeat(camera, cache, reveals, viewport, heatRadius)
 
     // Only tiles that could fall inside a lit area need drawing at all.
     val worldExtent = reveals.extent()
@@ -1131,8 +1234,32 @@ private const val BLOOM_START_FRACTION = 0.35f
 /** Fraction of the reveal radius that is fully lit before the edge feathers. */
 private const val MASK_SOLID_FRACTION = 0.58f
 
-/** How far the atmospheric haze reaches past the lit area itself. */
+/** How far the heat field reaches past the lit area itself. */
 private const val HALO_SPREAD = 1.7f
+
+/**
+ * The smallest a place's heat kernel is allowed to be on screen.
+ *
+ * The number that makes the overview work. Below roughly this size the field
+ * stops reading as a field and goes back to being dots.
+ */
+private val HEAT_MIN_RADIUS: Dp = 38.dp
+
+/**
+ * One place's peak contribution to the field.
+ *
+ * Deliberately low: a single visit should be a quiet ember, and it should take
+ * a handful in one neighbourhood to burn. Roughly five overlapping kernels
+ * saturate, which is about where "I know this area" starts being true.
+ */
+private const val HEAT_PEAK_ALPHA = 0.22f
+
+/** How present the field is at the whole-city view, and once you are in a street. */
+private const val HEAT_STRENGTH_FAR = 0.95f
+private const val HEAT_STRENGTH_NEAR = 0.12f
+
+/** The zoom by which the field has handed over to the lit streets. */
+private const val HEAT_FADE_SCALE = 12f
 
 /** Past this zoom the map stops breathing, and stops redrawing with it. */
 private const val BREATHING_MAX_SCALE = 4f

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.citymemory.data.MapLabelAssetTest" tests="11" skipped="0" failures="0" errors="0" timestamp="2026-08-18T10:46:13.794Z" hostname="macs-MacBook-Pro.local" time="0.009">
+  <properties/>
+  <testcase name="no two labels sit on the exact same point" classname="com.citymemory.data.MapLabelAssetTest" time="0.002"/>
+  <testcase name="every postal area is named" classname="com.citymemory.data.MapLabelAssetTest" time="0.0"/>
+  <testcase name="a truncated label list is rejected" classname="com.citymemory.data.MapLabelAssetTest" time="0.001"/>
+  <testcase name="the higher tier carries the places the data ranks highest" classname="com.citymemory.data.MapLabelAssetTest" time="0.001"/>
+  <testcase name="labels round-trip through the codec" classname="com.citymemory.data.MapLabelAssetTest" time="0.003"/>
+  <testcase name="an unknown tier is rejected rather than guessed at" classname="com.citymemory.data.MapLabelAssetTest" time="0.001"/>
+  <testcase name="area labels carry their pin code and place labels do not" classname="com.citymemory.data.MapLabelAssetTest" time="0.0"/>
+  <testcase name="every label is inside the map" classname="com.citymemory.data.MapLabelAssetTest" time="0.0"/>
+  <testcase name="a file that is not a label list is rejected" classname="com.citymemory.data.MapLabelAssetTest" time="0.001"/>
+  <testcase name="area names are short enough to sit on a map" classname="com.citymemory.data.MapLabelAssetTest" time="0.0"/>
+  <testcase name="every label has something to draw" classname="com.citymemory.data.MapLabelAssetTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.citymemory.domain.NeighbourhoodsTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-08-18T10:46:45.532Z" hostname="macs-MacBook-Pro.local" time="0.0">
+  <properties/>
+  <testcase name="the summary carries the count and the size of the set" classname="com.citymemory.domain.NeighbourhoodsTest" time="0.0"/>
+  <testcase name="only area-tier labels name a neighbourhood" classname="com.citymemory.domain.NeighbourhoodsTest" time="0.0"/>
+  <testcase name="city explorer is measured in neighbourhoods, not in an unreachable percentage" classname="com.citymemory.domain.NeighbourhoodsTest" time="0.0"/>
+  <testcase name="a place beyond the limit belongs to no area at all" classname="com.citymemory.domain.NeighbourhoodsTest" time="0.0"/>
+  <testcase name="counting is by distinct area, not by place" classname="com.citymemory.domain.NeighbourhoodsTest" time="0.0"/>
+  <testcase name="unvisited places count for nothing" classname="com.citymemory.domain.NeighbourhoodsTest" time="0.0"/>
+  <testcase name="a place belongs to the nearest area" classname="com.citymemory.domain.NeighbourhoodsTest" time="0.0"/>
+  <testcase name="no areas means no count rather than a crash" classname="com.citymemory.domain.NeighbourhoodsTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

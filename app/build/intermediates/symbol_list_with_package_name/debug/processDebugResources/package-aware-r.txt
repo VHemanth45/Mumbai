@@ -39,6 +39,10 @@ attr startDestination
 attr targetPackage
 attr ttcIndex
 attr uri
+bool enable_system_alarm_service_default
+bool enable_system_foreground_service_default
+bool enable_system_job_service_default
+bool workmanager_test_configuration
 color androidx_core_ripple_material_light
 color androidx_core_secondary_text_default_material_light
 color call_notification_answer_color
@@ -78,6 +82,7 @@ drawable ic_call_answer_video_low
 drawable ic_call_decline
 drawable ic_call_decline_low
 drawable ic_launcher_foreground
+drawable ic_stat_city_memory
 drawable notification_action_background
 drawable notification_bg
 drawable notification_bg_low
@@ -196,6 +201,7 @@ layout notification_template_part_chronometer
 layout notification_template_part_time
 mipmap ic_launcher
 mipmap ic_launcher_round
+plurals suggestion_notification_more
 string androidx_startup
 string app_name
 string autofill
@@ -281,6 +287,10 @@ string state_empty
 string state_off
 string state_on
 string status_bar_notification_info_overflow
+string suggestion_channel_description
+string suggestion_channel_name
+string suggestion_notification_body
+string suggestion_notification_title
 string switch_role
 string tab
 string template_percent

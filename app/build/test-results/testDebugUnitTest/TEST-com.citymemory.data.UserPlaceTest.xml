@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.citymemory.data.UserPlaceTest" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-08-18T10:46:32.879Z" hostname="macs-MacBook-Pro.local" time="6.861">
+  <properties/>
+  <testcase name="an added place counts towards the total" classname="com.citymemory.data.UserPlaceTest" time="0.805"/>
+  <testcase name="an added place sorts ahead of the catalog rather than into it" classname="com.citymemory.data.UserPlaceTest" time="0.449"/>
+  <testcase name="an added place can be rated and wishlisted like any other" classname="com.citymemory.data.UserPlaceTest" time="0.456"/>
+  <testcase name="an added place joins the catalog and is explored from the start" classname="com.citymemory.data.UserPlaceTest" time="0.454"/>
+  <testcase name="an address can be written onto a catalogued place" classname="com.citymemory.data.UserPlaceTest" time="0.451"/>
+  <testcase name="clearing an address stores nothing rather than an empty string" classname="com.citymemory.data.UserPlaceTest" time="0.448"/>
+  <testcase name="re-seeding an unchanged catalog does not touch anything" classname="com.citymemory.data.UserPlaceTest" time="1.496"/>
+  <testcase name="removing an added place takes its review with it" classname="com.citymemory.data.UserPlaceTest" time="0.457"/>
+  <testcase name="two places with the same name both survive under distinct ids" classname="com.citymemory.data.UserPlaceTest" time="0.462"/>
+  <testcase name="a later catalog never removes a place the user added" classname="com.citymemory.data.UserPlaceTest" time="0.462"/>
+  <testcase name="a catalogued place cannot be deleted by the same call" classname="com.citymemory.data.UserPlaceTest" time="0.458"/>
+  <testcase name="a place added without an address is still a place" classname="com.citymemory.data.UserPlaceTest" time="0.46"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

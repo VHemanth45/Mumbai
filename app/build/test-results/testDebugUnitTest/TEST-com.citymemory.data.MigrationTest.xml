@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.citymemory.data.MigrationTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-08-18T10:46:13.869Z" hostname="macs-MacBook-Pro.local" time="3.726">
+  <properties/>
+  <testcase name="the new columns arrive empty rather than defaulted to a rating" classname="com.citymemory.data.MigrationTest" time="2.163"/>
+  <testcase name="a version 3 database keeps its user-added place across the photos update" classname="com.citymemory.data.MigrationTest" time="0.338"/>
+  <testcase name="address arrives null on an upgraded row rather than invented" classname="com.citymemory.data.MigrationTest" time="0.214"/>
+  <testcase name="a place explored before the update can be rated after it" classname="com.citymemory.data.MigrationTest" time="0.144"/>
+  <testcase name="the photos table arrives empty and usable" classname="com.citymemory.data.MigrationTest" time="0.145"/>
+  <testcase name="a version 2 database keeps its visit and its review across the catalog update" classname="com.citymemory.data.MigrationTest" time="0.141"/>
+  <testcase name="an existing version 1 database opens at version 2 with its state intact" classname="com.citymemory.data.MigrationTest" time="0.014"/>
+  <testcase name="the catalog update lands the new places without disturbing the old row" classname="com.citymemory.data.MigrationTest" time="0.565"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

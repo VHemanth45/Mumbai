@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.citymemory.ui.LabelPlacementTest" tests="11" skipped="0" failures="0" errors="0" timestamp="2026-08-18T10:46:59.188Z" hostname="macs-MacBook-Pro.local" time="0.0">
+  <properties/>
+  <testcase name="an off-screen label neither draws nor reserves space" classname="com.citymemory.ui.LabelPlacementTest" time="0.0"/>
+  <testcase name="earlier labels win, which is what makes areas beat places" classname="com.citymemory.ui.LabelPlacementTest" time="0.0"/>
+  <testcase name="a crowded overview keeps a readable subset rather than everything" classname="com.citymemory.ui.LabelPlacementTest" time="0.0"/>
+  <testcase name="an area label is centred, because it names a region and not a point" classname="com.citymemory.ui.LabelPlacementTest" time="0.0"/>
+  <testcase name="a place label takes the left box when the right one is occupied" classname="com.citymemory.ui.LabelPlacementTest" time="0.0"/>
+  <testcase name="the first label always gets its space" classname="com.citymemory.ui.LabelPlacementTest" time="0.0"/>
+  <testcase name="a label clear of the first is drawn" classname="com.citymemory.ui.LabelPlacementTest" time="0.0"/>
+  <testcase name="padding is what keeps two names from touching" classname="com.citymemory.ui.LabelPlacementTest" time="0.0"/>
+  <testcase name="a label on top of one already drawn is refused" classname="com.citymemory.ui.LabelPlacementTest" time="0.0"/>
+  <testcase name="a place label never covers the marker it names" classname="com.citymemory.ui.LabelPlacementTest" time="0.0"/>
+  <testcase name="a label half off the edge is still drawn" classname="com.citymemory.ui.LabelPlacementTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

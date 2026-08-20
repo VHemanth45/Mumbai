@@ -52,6 +52,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.BiasAlignment
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
@@ -69,6 +70,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.citymemory.domain.model.ExplorationProgress
 import com.citymemory.domain.model.Place
 import com.citymemory.ui.components.GlowProgressBar
+import com.citymemory.ui.components.explorationBarDescription
+import com.citymemory.ui.components.explorationHeadlineDescription
+import com.citymemory.ui.components.explorationHeadlineLabel
+import com.citymemory.ui.components.explorationSubtitle
 import com.citymemory.ui.components.LoadingState
 import com.citymemory.ui.components.PlaceThumbnail
 import com.citymemory.ui.map.CityMapView
@@ -103,6 +108,14 @@ fun ExploreScreen(
     // state, because the map takes it as a parameter. It is a de-duplicated
     // boolean for exactly that reason — see ExploreViewModel.isPickingLocation.
     val isPicking by viewModel.isPickingLocation.collectAsStateWithLifecycle()
+
+    // The automatic-logging surface. Collected here rather than folded into
+    // `uiState` for the same reason `isPicking` is: `uiState` is what the map
+    // is given, so anything added to it recomposes the map when it changes.
+    val suggestions by viewModel.suggestions.collectAsStateWithLifecycle()
+    val autoLogEnabled by viewModel.autoLogEnabled.collectAsStateWithLifecycle()
+    val isImporting by viewModel.isImporting.collectAsStateWithLifecycle()
+    val importResult by viewModel.importResult.collectAsStateWithLifecycle()
 
     // Also a map parameter, and also a one-shot: it changes when "use my
     // location" comes back with a fix, and the map flies there once.
@@ -163,6 +176,19 @@ fun ExploreScreen(
                 .padding(start = 20.dp, bottom = 20.dp),
         )
 
+        val appContext = LocalContext.current.applicationContext
+        LaunchedEffect(Unit) { viewModel.rememberContext(appContext) }
+
+        LoggingActions(
+            autoLogEnabled = autoLogEnabled,
+            isImporting = isImporting,
+            onPhotosPicked = viewModel::onPhotosPicked,
+            onSetAutoLog = { enabled -> viewModel.setAutoLogEnabled(appContext, enabled) },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(end = 20.dp, bottom = 20.dp),
+        )
+
         // Retained separately from the selection so the card keeps its content
         // while it slides out, instead of blanking the moment it is dismissed.
         var lastSelected by remember { mutableStateOf<Place?>(null) }
@@ -190,6 +216,41 @@ fun ExploreScreen(
                     },
                     modifier = Modifier.padding(16.dp),
                 )
+            }
+        }
+
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(16.dp),
+        ) {
+            ImportResultBanner(
+                result = importResult,
+                onDismiss = viewModel::onImportResultShown,
+            )
+
+            val suggestion = suggestions.firstOrNull()
+            AnimatedVisibility(
+                // Stands down while a place card is open: they occupy the same
+                // corner, and a question stacked on top of the thing the user
+                // is already doing is an interruption rather than an offer.
+                visible = suggestion != null && state.selectedPlace == null,
+                enter = slideInVertically { it } + fadeIn(),
+                exit = slideOutVertically { it } + fadeOut(),
+            ) {
+                // Held so the card keeps its content while it slides out,
+                // rather than blanking the instant it is answered.
+                var shown by remember { mutableStateOf(suggestion) }
+                LaunchedEffect(suggestion) { suggestion?.let { shown = it } }
+                shown?.let { current ->
+                    SuggestionCard(
+                        suggestion = current,
+                        remaining = (suggestions.size - 1).coerceAtLeast(0),
+                        onConfirm = { viewModel.onSuggestionConfirmed(current) },
+                        onDismiss = { viewModel.onSuggestionDismissed(current) },
+                        now = System.currentTimeMillis(),
+                    )
+                }
             }
         }
 
@@ -239,15 +300,24 @@ private fun ExploreHeader(
 
         Spacer(Modifier.height(6.dp))
 
-        Row(verticalAlignment = Alignment.Bottom) {
+        // The count, not the percentage. 22 of 31,657 places is 0.07%, which
+        // rounds to the 0% this used to show in the largest type on the screen
+        // — a number that cannot move until the 317th place and reads as "you
+        // have done nothing" to someone who has been to twenty-two.
+        Row(
+            verticalAlignment = Alignment.Bottom,
+            modifier = Modifier.semantics(mergeDescendants = true) {
+                contentDescription = explorationHeadlineDescription(progress)
+            },
+        ) {
             Text(
-                text = "${progress.percent}%",
+                text = "${progress.visitedCount}",
                 style = MaterialTheme.typography.displayLarge,
                 color = GlowCore,
             )
             Spacer(Modifier.width(10.dp))
             Text(
-                text = "Explored",
+                text = explorationHeadlineLabel(progress),
                 style = MaterialTheme.typography.titleLarge,
                 color = TextSecondary,
                 modifier = Modifier.padding(bottom = 8.dp),
@@ -257,15 +327,14 @@ private fun ExploreHeader(
         Spacer(Modifier.height(10.dp))
 
         GlowProgressBar(
-            fraction = progress.fraction,
-            contentDescription = "${progress.percent} percent of ${cityName.ifBlank { "the city" }} explored",
+            fraction = progress.levelFraction,
+            contentDescription = explorationBarDescription(progress),
         )
 
         Spacer(Modifier.height(10.dp))
 
         Text(
-            text = "${progress.visitedCount} / ${progress.totalCount} Places" +
-                if (progress.wishlistCount > 0) "   ·   ${progress.wishlistCount} wishlisted" else "",
+            text = explorationSubtitle(progress),
             style = MaterialTheme.typography.bodyMedium,
             color = TextSecondary,
         )

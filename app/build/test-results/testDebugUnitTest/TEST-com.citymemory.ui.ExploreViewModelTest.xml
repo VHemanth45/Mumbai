@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.citymemory.ui.ExploreViewModelTest" tests="23" skipped="0" failures="0" errors="0" timestamp="2026-08-18T10:46:45.541Z" hostname="macs-MacBook-Pro.local" time="13.627">
+  <properties/>
+  <testcase name="pressing use my location twice from the same spot flies twice" classname="com.citymemory.ui.ExploreViewModelTest" time="0.474"/>
+  <testcase name="toggling visited from the map lights the place and undoes cleanly" classname="com.citymemory.ui.ExploreViewModelTest" time="1.168"/>
+  <testcase name="searching finds places by name, best guess first" classname="com.citymemory.ui.ExploreViewModelTest" time="0.49"/>
+  <testcase name="progress is derived from the same list the map draws" classname="com.citymemory.ui.ExploreViewModelTest" time="0.461"/>
+  <testcase name="no fix in time says so instead of hanging" classname="com.citymemory.ui.ExploreViewModelTest" time="0.459"/>
+  <testcase name="reopening the form does not greet you with the last place's message" classname="com.citymemory.ui.ExploreViewModelTest" time="0.469"/>
+  <testcase name="searching by category name finds the places in it" classname="com.citymemory.ui.ExploreViewModelTest" time="0.475"/>
+  <testcase name="a refused permission is reported rather than retried forever" classname="com.citymemory.ui.ExploreViewModelTest" time="0.464"/>
+  <testcase name="a place cannot be saved before the map has said where the ring is" classname="com.citymemory.ui.ExploreViewModelTest" time="0.464"/>
+  <testcase name="initial state loads the city, its places and its geometry" classname="com.citymemory.ui.ExploreViewModelTest" time="0.463"/>
+  <testcase name="a fix inside Mumbai flies the map there and the ring follows" classname="com.citymemory.ui.ExploreViewModelTest" time="0.465"/>
+  <testcase name="toggling wishlist from the map is reflected in progress" classname="com.citymemory.ui.ExploreViewModelTest" time="0.83"/>
+  <testcase name="search is case insensitive and matches part of a name" classname="com.citymemory.ui.ExploreViewModelTest" time="0.477"/>
+  <testcase name="a long result list is capped rather than burying the map" classname="com.citymemory.ui.ExploreViewModelTest" time="0.477"/>
+  <testcase name="the ring reports where it is and the place lands there" classname="com.citymemory.ui.ExploreViewModelTest" time="0.818"/>
+  <testcase name="picking a result selects it and clears the search out of the way" classname="com.citymemory.ui.ExploreViewModelTest" time="0.489"/>
+  <testcase name="closing the form forgets the fix, so reopening it does not fly again" classname="com.citymemory.ui.ExploreViewModelTest" time="0.464"/>
+  <testcase name="selecting a place on the map exposes it, and dismissing clears it" classname="com.citymemory.ui.ExploreViewModelTest" time="0.468"/>
+  <testcase name="a fix outside Mumbai is refused rather than clamped onto the map" classname="com.citymemory.ui.ExploreViewModelTest" time="0.467"/>
+  <testcase name="an empty box searches for nothing rather than for everything" classname="com.citymemory.ui.ExploreViewModelTest" time="0.469"/>
+  <testcase name="the selected place tracks its own state changes" classname="com.citymemory.ui.ExploreViewModelTest" time="0.825"/>
+  <testcase name="saving the card records the visit, the rating and the opinion together" classname="com.citymemory.ui.ExploreViewModelTest" time="1.17"/>
+  <testcase name="saving a rating alone does not silently mark the place explored" classname="com.citymemory.ui.ExploreViewModelTest" time="0.82"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

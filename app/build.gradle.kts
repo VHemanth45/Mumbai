@@ -95,6 +95,18 @@ dependencies {
 
     implementation(libs.kotlinx.coroutines.android)
 
+    // The background sampler behind dwell detection. WorkManager rather than a
+    // foreground service or an alarm: it is the only scheduler that survives
+    // reboot and Doze without the app holding a persistent notification, and a
+    // periodic job is exactly the shape of "take a fix every quarter hour".
+    implementation(libs.androidx.work.runtime)
+
+    // Reads the GPS tag out of a photo. The platform ExifInterface can do this
+    // too and PhotoStore already uses it for orientation, but only the AndroidX
+    // one reads HEIC — which is what every recent iPhone and many Androids
+    // write, and therefore most of the photos this feature exists to read.
+    implementation(libs.androidx.exifinterface)
+
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.core)

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.citymemory.data.PlaceCatalogAssetTest" tests="16" skipped="0" failures="0" errors="0" timestamp="2026-08-18T10:46:21.252Z" hostname="macs-MacBook-Pro.local" time="0.033">
+  <properties/>
+  <testcase name="ids are unique, because they are primary keys" classname="com.citymemory.data.PlaceCatalogAssetTest" time="0.01"/>
+  <testcase name="the address tells same-named places apart" classname="com.citymemory.data.PlaceCatalogAssetTest" time="0.008"/>
+  <testcase name="every place carries an address" classname="com.citymemory.data.PlaceCatalogAssetTest" time="0.002"/>
+  <testcase name="every place has an id, a name and a description" classname="com.citymemory.data.PlaceCatalogAssetTest" time="0.003"/>
+  <testcase name="a row with the wrong number of columns is rejected" classname="com.citymemory.data.PlaceCatalogAssetTest" time="0.001"/>
+  <testcase name="display order follows the file" classname="com.citymemory.data.PlaceCatalogAssetTest" time="0.004"/>
+  <testcase name="a row whose coordinate will not parse is rejected" classname="com.citymemory.data.PlaceCatalogAssetTest" time="0.0"/>
+  <testcase name="the stamp identifies this catalog" classname="com.citymemory.data.PlaceCatalogAssetTest" time="0.0"/>
+  <testcase name="the real asset decodes into the whole city" classname="com.citymemory.data.PlaceCatalogAssetTest" time="0.0"/>
+  <testcase name="a catalog round-trips through the codec" classname="com.citymemory.data.PlaceCatalogAssetTest" time="0.001"/>
+  <testcase name="every place is inside Mumbai" classname="com.citymemory.data.PlaceCatalogAssetTest" time="0.002"/>
+  <testcase name="the real asset reports the same stamp both ways" classname="com.citymemory.data.PlaceCatalogAssetTest" time="0.0"/>
+  <testcase name="the stamp can be read without decoding the rows" classname="com.citymemory.data.PlaceCatalogAssetTest" time="0.0"/>
+  <testcase name="a file that is not a catalog is rejected" classname="com.citymemory.data.PlaceCatalogAssetTest" time="0.0"/>
+  <testcase name="every category the app renders is present" classname="com.citymemory.data.PlaceCatalogAssetTest" time="0.002"/>
+  <testcase name="a catalog shorter than its header claims is rejected" classname="com.citymemory.data.PlaceCatalogAssetTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

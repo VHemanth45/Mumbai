@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.citymemory.ui.ScreenInteractionTest" tests="14" skipped="0" failures="0" errors="0" timestamp="2026-08-18T10:47:02.729Z" hostname="macs-MacBook-Pro.local" time="8.579">
+  <properties/>
+  <testcase name="progress starts at zero and reflects visits" classname="com.citymemory.ui.ScreenInteractionTest" time="1.05"/>
+  <testcase name="the wishlist toggle flips its own accessibility label" classname="com.citymemory.ui.ScreenInteractionTest" time="1.076"/>
+  <testcase name="wishlisting from detail updates the button label" classname="com.citymemory.ui.ScreenInteractionTest" time="0.222"/>
+  <testcase name="wishlist lists saved places and removing one empties it again" classname="com.citymemory.ui.ScreenInteractionTest" time="0.936"/>
+  <testcase name="a visited wishlist place moves to the explored section" classname="com.citymemory.ui.ScreenInteractionTest" time="0.511"/>
+  <testcase name="wishlist shows its empty state before anything is saved" classname="com.citymemory.ui.ScreenInteractionTest" time="0.534"/>
+  <testcase name="marking a place visited flips the primary action to explored" classname="com.citymemory.ui.ScreenInteractionTest" time="0.219"/>
+  <testcase name="tapping a place card reports its id for navigation" classname="com.citymemory.ui.ScreenInteractionTest" time="0.564"/>
+  <testcase name="a search with no matches shows the empty state" classname="com.citymemory.ui.ScreenInteractionTest" time="0.64"/>
+  <testcase name="the navigate button hands off to the launcher with the right coordinates" classname="com.citymemory.ui.ScreenInteractionTest" time="0.174"/>
+  <testcase name="search also matches a place description" classname="com.citymemory.ui.ScreenInteractionTest" time="0.604"/>
+  <testcase name="achievements unlock from state alone" classname="com.citymemory.ui.ScreenInteractionTest" time="0.941"/>
+  <testcase name="searching narrows the catalog to matching places" classname="com.citymemory.ui.ScreenInteractionTest" time="0.563"/>
+  <testcase name="discover lists the seeded catalog" classname="com.citymemory.ui.ScreenInteractionTest" time="0.544"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

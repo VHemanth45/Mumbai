@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.citymemory.data.PlaceRepositoryTest" tests="20" skipped="0" failures="0" errors="0" timestamp="2026-08-18T10:46:22.521Z" hostname="macs-MacBook-Pro.local" time="10.354">
+  <properties/>
+  <testcase name="places start neither visited nor wishlisted" classname="com.citymemory.data.PlaceRepositoryTest" time="0.45"/>
+  <testcase name="wishlist and visited are independent" classname="com.citymemory.data.PlaceRepositoryTest" time="1.478"/>
+  <testcase name="a rating and an opinion are stored against the place" classname="com.citymemory.data.PlaceRepositoryTest" time="0.452"/>
+  <testcase name="every category in the enum is represented in the seed" classname="com.citymemory.data.PlaceRepositoryTest" time="0.454"/>
+  <testcase name="seeding is idempotent across repeated reads" classname="com.citymemory.data.PlaceRepositoryTest" time="1.129"/>
+  <testcase name="first read seeds the full mumbai catalog" classname="com.citymemory.data.PlaceRepositoryTest" time="0.446"/>
+  <testcase name="clearing the review of an unvisited place drops the row entirely" classname="com.citymemory.data.PlaceRepositoryTest" time="0.107"/>
+  <testcase name="an opinion is trimmed rather than stored with its whitespace" classname="com.citymemory.data.PlaceRepositoryTest" time="0.449"/>
+  <testcase name="a place can be rated without having been marked visited" classname="com.citymemory.data.PlaceRepositoryTest" time="0.447"/>
+  <testcase name="state row is dropped once a place is neither visited nor wishlisted" classname="com.citymemory.data.PlaceRepositoryTest" time="0.106"/>
+  <testcase name="marking visited persists the flag and the timestamp" classname="com.citymemory.data.PlaceRepositoryTest" time="0.452"/>
+  <testcase name="undoing a visit clears both the flag and the timestamp" classname="com.citymemory.data.PlaceRepositoryTest" time="0.448"/>
+  <testcase name="observePlaces re-emits when a place is marked visited" classname="com.citymemory.data.PlaceRepositoryTest" time="1.136"/>
+  <testcase name="un-marking a visit keeps what the user wrote about the place" classname="com.citymemory.data.PlaceRepositoryTest" time="0.447"/>
+  <testcase name="observeCity returns the seeded city" classname="com.citymemory.data.PlaceRepositoryTest" time="0.449"/>
+  <testcase name="re-marking a visited place keeps the original timestamp" classname="com.citymemory.data.PlaceRepositoryTest" time="0.446"/>
+  <testcase name="observePlace tracks a single place" classname="com.citymemory.data.PlaceRepositoryTest" time="0.107"/>
+  <testcase name="a rating outside one to five is pulled back into range" classname="com.citymemory.data.PlaceRepositoryTest" time="0.791"/>
+  <testcase name="a blank opinion is stored as nothing written" classname="com.citymemory.data.PlaceRepositoryTest" time="0.449"/>
+  <testcase name="clearing one flag keeps the row while the other is still set" classname="com.citymemory.data.PlaceRepositoryTest" time="0.111"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

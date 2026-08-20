@@ -43,6 +43,19 @@ data class ExplorationProgress(
     val totalCount: Int,
     val wishlistCount: Int,
     val categories: List<CategoryProgress>,
+    /**
+     * How many of the city's named areas the user has been to, and how many
+     * there are — see [com.citymemory.domain.Neighbourhoods].
+     *
+     * This is the bounded number the app leads with alongside the raw count.
+     * [visitedCount] grows forever and never arrives anywhere; the share of the
+     * catalog visited is arithmetically stuck near zero, because a city of
+     * 31,657 places needs 317 of them to move a single percentage point. Areas
+     * are the metric in between: finite, reachable, and the unit people
+     * actually use to talk about where they have been.
+     */
+    val neighbourhoodsExplored: Int = 0,
+    val neighbourhoodTotal: Int = 0,
 ) {
     val fraction: Float get() = if (totalCount == 0) 0f else visitedCount.toFloat() / totalCount
 
@@ -56,6 +69,23 @@ data class ExplorationProgress(
         get() {
             val next = ExplorerLevel.entries.firstOrNull { it.threshold > visitedCount }
             return next?.let { it.threshold - visitedCount }
+        }
+
+    /**
+     * How far through the current level the user is, 0..1.
+     *
+     * What the headline bar shows, in place of [fraction]. A bar fed the share
+     * of the catalog explored sits visibly empty at every real usage level —
+     * it reads as "you have done nothing" for the first three hundred places —
+     * whereas this one visibly fills between every level and resets, so the
+     * bar is always somewhere in the middle of saying something.
+     */
+    val levelFraction: Float
+        get() {
+            val next = ExplorerLevel.entries.firstOrNull { it.threshold > visitedCount } ?: return 1f
+            val span = next.threshold - level.threshold
+            if (span <= 0) return 1f
+            return ((visitedCount - level.threshold).toFloat() / span).coerceIn(0f, 1f)
         }
 
     companion object {

@@ -3,17 +3,24 @@ package com.citymemory.di
 import android.content.Context
 import com.citymemory.data.local.database.CityMemoryDatabase
 import com.citymemory.data.local.seed.AssetPlaceCatalog
+import com.citymemory.data.dwell.DwellStateStore
+import com.citymemory.data.dwell.PreferencesDwellStateStore
 import com.citymemory.data.local.seed.DatabaseSeeder
 import com.citymemory.data.map.OsmCityGeometryProvider
+import com.citymemory.data.photo.AndroidPhotoLocationReader
 import com.citymemory.data.photo.FilePhotoStore
+import com.citymemory.data.photo.PhotoLocationReader
 import com.citymemory.data.photo.PhotoStore
+import com.citymemory.data.photo.PhotoVisitImporter
 import com.citymemory.data.repository.PlaceRepositoryImpl
 import com.citymemory.domain.repository.CityGeometryProvider
 import com.citymemory.domain.repository.PlaceRepository
 import com.citymemory.util.AndroidLocationSource
 import com.citymemory.util.AndroidNavigationLauncher
+import com.citymemory.util.AndroidVisitNotifier
 import com.citymemory.util.LocationSource
 import com.citymemory.util.NavigationLauncher
+import com.citymemory.util.VisitNotifier
 
 /**
  * Manual dependency container.
@@ -62,5 +69,32 @@ class AppContainer(context: Context) {
      */
     val locationSource: LocationSource by lazy {
         AndroidLocationSource()
+    }
+
+    // -- Automatic logging --------------------------------------------------
+
+    /**
+     * Where the dwell detector keeps its state, and whether it is switched on.
+     *
+     * Preferences-backed, so `DwellWorker` can read it without opening the
+     * database — see [PreferencesDwellStateStore].
+     */
+    val dwellStateStore: DwellStateStore by lazy {
+        PreferencesDwellStateStore(applicationContext)
+    }
+
+    /** Posts the "were you at ...?" question. */
+    val visitNotifier: VisitNotifier by lazy {
+        AndroidVisitNotifier()
+    }
+
+    /** Pulls the coordinate out of a photograph, redaction and all. */
+    val photoLocationReader: PhotoLocationReader by lazy {
+        AndroidPhotoLocationReader(applicationContext)
+    }
+
+    /** Photographs in, suggested visits out. */
+    val photoVisitImporter: PhotoVisitImporter by lazy {
+        PhotoVisitImporter(placeRepository, photoLocationReader)
     }
 }

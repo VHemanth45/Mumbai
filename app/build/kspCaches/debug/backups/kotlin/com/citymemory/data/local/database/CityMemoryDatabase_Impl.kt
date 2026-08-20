@@ -17,6 +17,8 @@ import com.citymemory.`data`.local.dao.PlacePhotoDao
 import com.citymemory.`data`.local.dao.PlacePhotoDao_Impl
 import com.citymemory.`data`.local.dao.UserPlaceStateDao
 import com.citymemory.`data`.local.dao.UserPlaceStateDao_Impl
+import com.citymemory.`data`.local.dao.VisitSuggestionDao
+import com.citymemory.`data`.local.dao.VisitSuggestionDao_Impl
 import javax.`annotation`.processing.Generated
 import kotlin.Lazy
 import kotlin.String
@@ -51,9 +53,13 @@ public class CityMemoryDatabase_Impl : CityMemoryDatabase() {
     PlacePhotoDao_Impl(this)
   }
 
+  private val _visitSuggestionDao: Lazy<VisitSuggestionDao> = lazy {
+    VisitSuggestionDao_Impl(this)
+  }
+
   protected override fun createOpenDelegate(): RoomOpenDelegate {
-    val _openDelegate: RoomOpenDelegate = object : RoomOpenDelegate(4,
-        "ce8c1cd0173fa3f77c6fb202697886ac", "4e6517787b04153c48526bace5909a56") {
+    val _openDelegate: RoomOpenDelegate = object : RoomOpenDelegate(5,
+        "2bca0a284ccf9a02b49613df4f40d227", "a54f447624d87a87fae69d301c45cac7") {
       public override fun createAllTables(connection: SQLiteConnection) {
         connection.execSQL("CREATE TABLE IF NOT EXISTS `cities` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `country` TEXT NOT NULL, `catalogStamp` TEXT, PRIMARY KEY(`id`))")
         connection.execSQL("CREATE TABLE IF NOT EXISTS `places` (`id` TEXT NOT NULL, `cityId` TEXT NOT NULL, `name` TEXT NOT NULL, `category` TEXT NOT NULL, `description` TEXT NOT NULL, `latitude` REAL NOT NULL, `longitude` REAL NOT NULL, `imageUrl` TEXT, `displayOrder` INTEGER NOT NULL, `address` TEXT, `isUserAdded` INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(`id`), FOREIGN KEY(`cityId`) REFERENCES `cities`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )")
@@ -62,8 +68,11 @@ public class CityMemoryDatabase_Impl : CityMemoryDatabase() {
         connection.execSQL("CREATE TABLE IF NOT EXISTS `user_place_state` (`placeId` TEXT NOT NULL, `isVisited` INTEGER NOT NULL, `isWishlisted` INTEGER NOT NULL, `visitedAt` INTEGER, `wishlistedAt` INTEGER, `rating` INTEGER, `note` TEXT, PRIMARY KEY(`placeId`), FOREIGN KEY(`placeId`) REFERENCES `places`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )")
         connection.execSQL("CREATE TABLE IF NOT EXISTS `place_photos` (`id` TEXT NOT NULL, `placeId` TEXT NOT NULL, `fileName` TEXT NOT NULL, `addedAt` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`placeId`) REFERENCES `places`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )")
         connection.execSQL("CREATE INDEX IF NOT EXISTS `index_place_photos_placeId` ON `place_photos` (`placeId`)")
+        connection.execSQL("CREATE TABLE IF NOT EXISTS `visit_suggestions` (`id` TEXT NOT NULL, `placeId` TEXT NOT NULL, `source` TEXT NOT NULL, `status` TEXT NOT NULL, `detectedAt` INTEGER NOT NULL, `latitude` REAL NOT NULL, `longitude` REAL NOT NULL, `photoUri` TEXT, `createdAt` INTEGER NOT NULL, `resolvedAt` INTEGER, PRIMARY KEY(`id`), FOREIGN KEY(`placeId`) REFERENCES `places`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )")
+        connection.execSQL("CREATE INDEX IF NOT EXISTS `index_visit_suggestions_placeId` ON `visit_suggestions` (`placeId`)")
+        connection.execSQL("CREATE INDEX IF NOT EXISTS `index_visit_suggestions_status` ON `visit_suggestions` (`status`)")
         connection.execSQL("CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)")
-        connection.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'ce8c1cd0173fa3f77c6fb202697886ac')")
+        connection.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '2bca0a284ccf9a02b49613df4f40d227')")
       }
 
       public override fun dropAllTables(connection: SQLiteConnection) {
@@ -71,6 +80,7 @@ public class CityMemoryDatabase_Impl : CityMemoryDatabase() {
         connection.execSQL("DROP TABLE IF EXISTS `places`")
         connection.execSQL("DROP TABLE IF EXISTS `user_place_state`")
         connection.execSQL("DROP TABLE IF EXISTS `place_photos`")
+        connection.execSQL("DROP TABLE IF EXISTS `visit_suggestions`")
       }
 
       public override fun onCreate(connection: SQLiteConnection) {
@@ -214,6 +224,47 @@ public class CityMemoryDatabase_Impl : CityMemoryDatabase() {
               | Found:
               |""".trimMargin() + _existingPlacePhotos)
         }
+        val _columnsVisitSuggestions: MutableMap<String, TableInfo.Column> = mutableMapOf()
+        _columnsVisitSuggestions.put("id", TableInfo.Column("id", "TEXT", true, 1, null,
+            TableInfo.CREATED_FROM_ENTITY))
+        _columnsVisitSuggestions.put("placeId", TableInfo.Column("placeId", "TEXT", true, 0, null,
+            TableInfo.CREATED_FROM_ENTITY))
+        _columnsVisitSuggestions.put("source", TableInfo.Column("source", "TEXT", true, 0, null,
+            TableInfo.CREATED_FROM_ENTITY))
+        _columnsVisitSuggestions.put("status", TableInfo.Column("status", "TEXT", true, 0, null,
+            TableInfo.CREATED_FROM_ENTITY))
+        _columnsVisitSuggestions.put("detectedAt", TableInfo.Column("detectedAt", "INTEGER", true,
+            0, null, TableInfo.CREATED_FROM_ENTITY))
+        _columnsVisitSuggestions.put("latitude", TableInfo.Column("latitude", "REAL", true, 0, null,
+            TableInfo.CREATED_FROM_ENTITY))
+        _columnsVisitSuggestions.put("longitude", TableInfo.Column("longitude", "REAL", true, 0,
+            null, TableInfo.CREATED_FROM_ENTITY))
+        _columnsVisitSuggestions.put("photoUri", TableInfo.Column("photoUri", "TEXT", false, 0,
+            null, TableInfo.CREATED_FROM_ENTITY))
+        _columnsVisitSuggestions.put("createdAt", TableInfo.Column("createdAt", "INTEGER", true, 0,
+            null, TableInfo.CREATED_FROM_ENTITY))
+        _columnsVisitSuggestions.put("resolvedAt", TableInfo.Column("resolvedAt", "INTEGER", false,
+            0, null, TableInfo.CREATED_FROM_ENTITY))
+        val _foreignKeysVisitSuggestions: MutableSet<TableInfo.ForeignKey> = mutableSetOf()
+        _foreignKeysVisitSuggestions.add(TableInfo.ForeignKey("places", "CASCADE", "NO ACTION",
+            listOf("placeId"), listOf("id")))
+        val _indicesVisitSuggestions: MutableSet<TableInfo.Index> = mutableSetOf()
+        _indicesVisitSuggestions.add(TableInfo.Index("index_visit_suggestions_placeId", false,
+            listOf("placeId"), listOf("ASC")))
+        _indicesVisitSuggestions.add(TableInfo.Index("index_visit_suggestions_status", false,
+            listOf("status"), listOf("ASC")))
+        val _infoVisitSuggestions: TableInfo = TableInfo("visit_suggestions",
+            _columnsVisitSuggestions, _foreignKeysVisitSuggestions, _indicesVisitSuggestions)
+        val _existingVisitSuggestions: TableInfo = read(connection, "visit_suggestions")
+        if (!_infoVisitSuggestions.equals(_existingVisitSuggestions)) {
+          return RoomOpenDelegate.ValidationResult(false, """
+              |visit_suggestions(com.citymemory.data.local.entities.VisitSuggestionEntity).
+              | Expected:
+              |""".trimMargin() + _infoVisitSuggestions + """
+              |
+              | Found:
+              |""".trimMargin() + _existingVisitSuggestions)
+        }
         return RoomOpenDelegate.ValidationResult(true, null)
       }
     }
@@ -224,11 +275,12 @@ public class CityMemoryDatabase_Impl : CityMemoryDatabase() {
     val _shadowTablesMap: MutableMap<String, String> = mutableMapOf()
     val _viewTables: MutableMap<String, Set<String>> = mutableMapOf()
     return InvalidationTracker(this, _shadowTablesMap, _viewTables, "cities", "places",
-        "user_place_state", "place_photos")
+        "user_place_state", "place_photos", "visit_suggestions")
   }
 
   public override fun clearAllTables() {
-    super.performClear(true, "cities", "places", "user_place_state", "place_photos")
+    super.performClear(true, "cities", "places", "user_place_state", "place_photos",
+        "visit_suggestions")
   }
 
   protected override fun getRequiredTypeConverterClasses(): Map<KClass<*>, List<KClass<*>>> {
@@ -237,6 +289,8 @@ public class CityMemoryDatabase_Impl : CityMemoryDatabase() {
     _typeConvertersMap.put(PlaceDao::class, PlaceDao_Impl.getRequiredConverters())
     _typeConvertersMap.put(UserPlaceStateDao::class, UserPlaceStateDao_Impl.getRequiredConverters())
     _typeConvertersMap.put(PlacePhotoDao::class, PlacePhotoDao_Impl.getRequiredConverters())
+    _typeConvertersMap.put(VisitSuggestionDao::class,
+        VisitSuggestionDao_Impl.getRequiredConverters())
     return _typeConvertersMap
   }
 
@@ -259,4 +313,6 @@ public class CityMemoryDatabase_Impl : CityMemoryDatabase() {
   public override fun userPlaceStateDao(): UserPlaceStateDao = _userPlaceStateDao.value
 
   public override fun placePhotoDao(): PlacePhotoDao = _placePhotoDao.value
+
+  public override fun visitSuggestionDao(): VisitSuggestionDao = _visitSuggestionDao.value
 }

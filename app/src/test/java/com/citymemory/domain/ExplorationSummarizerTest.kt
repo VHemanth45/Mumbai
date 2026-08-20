@@ -2,6 +2,8 @@ package com.citymemory.domain
 
 import com.citymemory.domain.model.AchievementId
 import com.citymemory.domain.model.ExplorerLevel
+import com.citymemory.domain.model.LabelTier
+import com.citymemory.domain.model.MapLabel
 import com.citymemory.domain.model.Place
 import com.citymemory.domain.model.PlaceCategory
 import org.junit.Assert.assertEquals
@@ -20,14 +22,16 @@ class ExplorationSummarizerTest {
         category: PlaceCategory = PlaceCategory.TOURIST,
         visited: Boolean = false,
         wishlisted: Boolean = false,
+        latitude: Double = 19.0,
+        longitude: Double = 72.8,
     ) = Place(
         id = "p${nextId++}",
         cityId = "mumbai",
         name = "Place",
         category = category,
         description = "",
-        latitude = 19.0,
-        longitude = 72.8,
+        latitude = latitude,
+        longitude = longitude,
         imageUrl = null,
         displayOrder = 0,
         isVisited = visited,
@@ -153,13 +157,29 @@ class ExplorationSummarizerTest {
     }
 
     @Test
-    fun `city explorer unlocks at half the dataset`() {
-        fun cityExplorerAt(visited: Int) = ExplorationSummarizer
-            .achievementsOf(List(visited) { place(visited = true) } + List(80 - visited) { place() })
+    fun `city explorer unlocks on the tenth neighbourhood`() {
+        // It used to be "reach 50% exploration". Against the shipped catalog
+        // that is 15,829 places, so the achievement sat at zero for every user
+        // who would ever exist. Neighbourhoods are the same intent at a scale
+        // someone can actually reach.
+        //
+        // A tenth of a degree apart is ~11 km, so each place sits on its own
+        // area and well outside every other one.
+        val areas = List(12) { index ->
+            MapLabel(LabelTier.AREA, "Area $index", 19.0 + index * 0.1, 72.8)
+        }
+
+        fun cityExplorerAt(neighbourhoods: Int) = ExplorationSummarizer
+            .achievementsOf(
+                List(neighbourhoods) { index ->
+                    place(visited = true, latitude = 19.0 + index * 0.1, longitude = 72.8)
+                },
+                areas,
+            )
             .first { it.id == AchievementId.CITY_EXPLORER }
 
-        assertFalse(cityExplorerAt(39).isUnlocked)
-        assertTrue(cityExplorerAt(40).isUnlocked)
+        assertFalse(cityExplorerAt(9).isUnlocked)
+        assertTrue(cityExplorerAt(10).isUnlocked)
     }
 
     @Test

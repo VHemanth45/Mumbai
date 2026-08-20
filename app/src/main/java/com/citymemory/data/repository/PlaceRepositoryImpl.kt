@@ -6,6 +6,7 @@ import com.citymemory.data.local.database.CityMemoryDatabase
 import com.citymemory.data.local.entities.PlaceEntity
 import com.citymemory.data.local.entities.PlacePhotoEntity
 import com.citymemory.data.local.entities.UserPlaceStateEntity
+import com.citymemory.data.local.entities.VisitSuggestionEntity
 import com.citymemory.data.local.seed.DatabaseSeeder
 import com.citymemory.data.mapper.toDomain
 import com.citymemory.data.photo.NoPhotoStore
@@ -14,7 +15,11 @@ import com.citymemory.domain.model.City
 import com.citymemory.domain.model.Place
 import com.citymemory.domain.model.PlaceCategory
 import com.citymemory.domain.model.PlacePhoto
+import com.citymemory.domain.model.SuggestionSource
+import com.citymemory.domain.model.SuggestionStatus
+import com.citymemory.domain.model.PendingSuggestion
 import com.citymemory.domain.repository.PlaceRepository
+import com.citymemory.domain.model.GeoPoint
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
@@ -61,6 +66,13 @@ class PlaceRepositoryImpl(
                 // so visitedAt always means "when this place was first explored".
                 visitedAt = if (isVisited) current.visitedAt ?: now() else null,
             )
+        }
+        // Marking a place visited by hand answers anything the detector was
+        // about to ask about it. Leaving the question pending would mean a
+        // notification, minutes later, about somewhere the user has just
+        // finished telling us they went.
+        if (isVisited) {
+            database.visitSuggestionDao().dismissPendingFor(placeId, now())
         }
     }
 
@@ -181,6 +193,113 @@ class PlaceRepositoryImpl(
         return true
     }
 
+    override fun observePendingSuggestions(): Flow<List<PendingSuggestion>> =
+        database.visitSuggestionDao().observePending().map { rows ->
+            rows.map { row ->
+                PendingSuggestion(
+                    id = row.id,
+                    placeId = row.placeId,
+                    source = SuggestionSource.fromId(row.source),
+                    detectedAt = row.detectedAt,
+                    location = GeoPoint(row.latitude, row.longitude),
+                    photoUri = row.photoUri,
+                )
+            }
+        }
+
+    override suspend fun recordSuggestion(
+        placeId: String,
+        source: SuggestionSource,
+        detectedAt: Long,
+        latitude: Double,
+        longitude: Double,
+        photoUri: String?,
+    ): String? {
+        seeder.seedIfNeeded()
+        if (!database.placeDao().exists(placeId)) return null
+
+        // Already been there. The data model records a place as visited or not,
+        // with no repeat visits, so there is nothing left to ask.
+        if (database.userPlaceStateDao().getState(placeId)?.isVisited == true) return null
+
+        val latest = database.visitSuggestionDao().latestFor(placeId)
+        if (latest != null) {
+            val age = now() - latest.detectedAt
+            val suppressed = when (SuggestionStatus.fromId(latest.status)) {
+                // One open question per place. A second card for the same cafe
+                // is not more information, it is the same question twice.
+                SuggestionStatus.PENDING -> true
+                // "No" has a shelf life. Re-asking tomorrow is nagging;
+                // never asking again would mean one mis-tap silently disables
+                // the feature for that place forever.
+                SuggestionStatus.DISMISSED -> age < RESUGGEST_AFTER_DISMISS_MILLIS
+                // Confirmed rows are normally caught by the visited check
+                // above; this covers a confirmation the user has since undone.
+                SuggestionStatus.CONFIRMED -> age < RESUGGEST_AFTER_CONFIRM_MILLIS
+            }
+            if (suppressed) return null
+        }
+
+        val id = "$SUGGESTION_ID_PREFIX${UUID.randomUUID()}"
+        database.visitSuggestionDao().insert(
+            VisitSuggestionEntity(
+                id = id,
+                placeId = placeId,
+                source = source.id,
+                status = SuggestionStatus.PENDING.id,
+                detectedAt = detectedAt,
+                latitude = latitude,
+                longitude = longitude,
+                photoUri = photoUri,
+                createdAt = now(),
+                resolvedAt = null,
+            ),
+        )
+        return id
+    }
+
+    override suspend fun confirmSuggestion(suggestionId: String) {
+        val suggestion = database.visitSuggestionDao().get(suggestionId) ?: return
+        if (SuggestionStatus.fromId(suggestion.status) != SuggestionStatus.PENDING) return
+
+        // Status first, and the visit second on purpose: marking a place
+        // visited dismisses whatever is still pending for it, and this row must
+        // already be out of that set or it would resolve itself as dismissed.
+        database.visitSuggestionDao()
+            .setStatus(suggestionId, SuggestionStatus.CONFIRMED.id, now())
+
+        // **Dated when it happened, not when it was confirmed.** This is the
+        // whole of what makes importing a camera roll worth doing. `setVisited`
+        // stamps `now()`, which is right for a person standing in the place and
+        // catastrophic for a backfill: confirm two years of photographs through
+        // it and every one of those visits is dated today, the timeline
+        // collapses into a single afternoon, and nothing in the database
+        // remembers otherwise well enough to undo it.
+        mutateState(suggestion.placeId) { current ->
+            current.copy(
+                isVisited = true,
+                // Still the earliest known visit rather than blindly the
+                // suggestion's own date: confirming an older photo for a place
+                // already visited should move the date back, never forward.
+                visitedAt = minOf(current.visitedAt ?: suggestion.detectedAt, suggestion.detectedAt),
+            )
+        }
+        database.visitSuggestionDao().dismissPendingFor(suggestion.placeId, now())
+
+        // Deliberately last, and deliberately unchecked. The visit is the fact
+        // worth keeping; a photo whose grant lapsed while the notification sat
+        // in the shade must not take it down with it.
+        suggestion.photoUri?.let { addPhoto(suggestion.placeId, it) }
+    }
+
+    override suspend fun dismissSuggestion(suggestionId: String) {
+        database.visitSuggestionDao()
+            .setStatus(suggestionId, SuggestionStatus.DISMISSED.id, now())
+    }
+
+    override suspend fun pendingSuggestionCount(): Int =
+        database.visitSuggestionDao().pendingCount()
+
     override suspend fun deletePhoto(photoId: String) {
         val photo = database.placePhotoDao().photo(photoId) ?: return
         // Row first: an orphaned file is swept up later, whereas a row pointing
@@ -258,6 +377,22 @@ class PlaceRepositoryImpl(
 
         /** Namespaces photo ids the same way, and for the same reason. */
         const val PHOTO_ID_PREFIX = "photo-"
+
+        /** And suggestion ids, which are generated rather than derived. */
+        const val SUGGESTION_ID_PREFIX = "sug-"
+
+        /**
+         * How long a "no" holds before the same place may be offered again.
+         *
+         * A week. Short enough that dismissing the wrong card on a Tuesday does
+         * not blind the app to a place you go to every weekend; long enough
+         * that walking past the same restaurant every morning cannot produce a
+         * daily notification about it.
+         */
+        const val RESUGGEST_AFTER_DISMISS_MILLIS = 7L * 24 * 60 * 60 * 1000
+
+        /** And after a yes that was later undone. */
+        const val RESUGGEST_AFTER_CONFIRM_MILLIS = 12L * 60 * 60 * 1000
 
         /** Same rule as `slugify` in `tools/build_seed.py`, so ids look alike. */
         fun slugify(name: String): String =

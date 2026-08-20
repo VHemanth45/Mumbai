@@ -10,10 +10,12 @@ import com.citymemory.data.local.dao.CityDao
 import com.citymemory.data.local.dao.PlaceDao
 import com.citymemory.data.local.dao.PlacePhotoDao
 import com.citymemory.data.local.dao.UserPlaceStateDao
+import com.citymemory.data.local.dao.VisitSuggestionDao
 import com.citymemory.data.local.entities.CityEntity
 import com.citymemory.data.local.entities.PlaceEntity
 import com.citymemory.data.local.entities.PlacePhotoEntity
 import com.citymemory.data.local.entities.UserPlaceStateEntity
+import com.citymemory.data.local.entities.VisitSuggestionEntity
 
 @Database(
     entities = [
@@ -21,8 +23,9 @@ import com.citymemory.data.local.entities.UserPlaceStateEntity
         PlaceEntity::class,
         UserPlaceStateEntity::class,
         PlacePhotoEntity::class,
+        VisitSuggestionEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = true,
 )
 abstract class CityMemoryDatabase : RoomDatabase() {
@@ -32,6 +35,8 @@ abstract class CityMemoryDatabase : RoomDatabase() {
     abstract fun userPlaceStateDao(): UserPlaceStateDao
 
     abstract fun placePhotoDao(): PlacePhotoDao
+
+    abstract fun visitSuggestionDao(): VisitSuggestionDao
 
     companion object {
         const val DATABASE_NAME = "city_memory.db"
@@ -105,6 +110,43 @@ abstract class CityMemoryDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * Adds the table the automatic-logging features write into.
+         *
+         * A whole table rather than columns on `user_place_state`, because a
+         * suggestion is not a weaker visit — it is a question. Keeping the two
+         * apart is what makes it impossible for a mis-detected dwell to show up
+         * on the map, and it is why this migration cannot disturb anything: it
+         * creates one new table and touches no existing row.
+         *
+         * The `IF NOT EXISTS` and the exact column order mirror what Room
+         * generates for [VisitSuggestionEntity], which is what its
+         * post-migration validation compares against.
+         */
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `visit_suggestions` (" +
+                        "`id` TEXT NOT NULL, `placeId` TEXT NOT NULL, " +
+                        "`source` TEXT NOT NULL, `status` TEXT NOT NULL, " +
+                        "`detectedAt` INTEGER NOT NULL, `latitude` REAL NOT NULL, " +
+                        "`longitude` REAL NOT NULL, `photoUri` TEXT, " +
+                        "`createdAt` INTEGER NOT NULL, `resolvedAt` INTEGER, " +
+                        "PRIMARY KEY(`id`), " +
+                        "FOREIGN KEY(`placeId`) REFERENCES `places`(`id`) " +
+                        "ON UPDATE NO ACTION ON DELETE CASCADE )",
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_visit_suggestions_placeId` " +
+                        "ON `visit_suggestions` (`placeId`)",
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_visit_suggestions_status` " +
+                        "ON `visit_suggestions` (`status`)",
+                )
+            }
+        }
+
         // Room turns on `PRAGMA foreign_keys` itself for schemas that declare
         // them, so the places -> user_place_state cascade needs no extra setup.
         fun build(context: Context): CityMemoryDatabase =
@@ -113,7 +155,7 @@ abstract class CityMemoryDatabase : RoomDatabase() {
                 CityMemoryDatabase::class.java,
                 DATABASE_NAME,
             )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
                 .build()
     }
 }

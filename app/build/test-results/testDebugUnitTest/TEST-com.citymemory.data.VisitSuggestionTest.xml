@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.citymemory.data.VisitSuggestionTest" tests="11" skipped="0" failures="0" errors="0" timestamp="2026-08-18T10:46:39.744Z" hostname="macs-MacBook-Pro.local" time="5.783">
+  <properties/>
+  <testcase name="a suggestion does not mark anything visited" classname="com.citymemory.data.VisitSuggestionTest" time="0.474"/>
+  <testcase name="somewhere already visited is not asked about" classname="com.citymemory.data.VisitSuggestionTest" time="0.106"/>
+  <testcase name="dismissing does not touch the place" classname="com.citymemory.data.VisitSuggestionTest" time="0.466"/>
+  <testcase name="confirming logs the visit and clears the question" classname="com.citymemory.data.VisitSuggestionTest" time="0.808"/>
+  <testcase name="marking a place visited by hand withdraws the pending question" classname="com.citymemory.data.VisitSuggestionTest" time="0.819"/>
+  <testcase name="the card carries how far the evidence was from the place" classname="com.citymemory.data.VisitSuggestionTest" time="0.457"/>
+  <testcase name="one open question per place" classname="com.citymemory.data.VisitSuggestionTest" time="0.453"/>
+  <testcase name="a dismissal holds for a week and then lapses" classname="com.citymemory.data.VisitSuggestionTest" time="0.814"/>
+  <testcase name="an older photo moves the visit date back, never forward" classname="com.citymemory.data.VisitSuggestionTest" time="0.814"/>
+  <testcase name="a confirmed visit is dated when it happened, not when it was confirmed" classname="com.citymemory.data.VisitSuggestionTest" time="0.465"/>
+  <testcase name="a suggestion for a place that does not exist is refused" classname="com.citymemory.data.VisitSuggestionTest" time="0.107"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

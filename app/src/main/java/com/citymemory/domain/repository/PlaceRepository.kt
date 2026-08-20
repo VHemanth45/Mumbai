@@ -4,6 +4,8 @@ import com.citymemory.domain.model.City
 import com.citymemory.domain.model.Place
 import com.citymemory.domain.model.PlaceCategory
 import com.citymemory.domain.model.PlacePhoto
+import com.citymemory.domain.model.PendingSuggestion
+import com.citymemory.domain.model.SuggestionSource
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -90,4 +92,55 @@ interface PlaceRepository {
     suspend fun addPhoto(placeId: String, sourceUri: String): Boolean
 
     suspend fun deletePhoto(photoId: String)
+
+    // -- Suggested visits ---------------------------------------------------
+    //
+    // The write side of the two automatic-logging features. Nothing here marks
+    // anything visited except [confirmSuggestion], and that only ever runs
+    // because the user tapped a button: a sensor may propose, and only a person
+    // may dispose.
+
+    /**
+     * Everything waiting to be answered, newest first.
+     *
+     * Place ids rather than places: the caller already holds the place list, and
+     * joining there costs a hash lookup where joining here would cost a second
+     * full read of the catalog on every change. See
+     * [com.citymemory.domain.model.VisitSuggestions.join].
+     */
+    fun observePendingSuggestions(): Flow<List<PendingSuggestion>>
+
+    /**
+     * Offers a visit, if it is worth offering.
+     *
+     * Returns the new suggestion's id, or **null when the offer was suppressed**
+     * — which is the common case and not a failure. A detector fires on
+     * evidence; whether that evidence is worth interrupting someone for is a
+     * question about what they have already told us, and it is answered here,
+     * once, rather than separately in each detector.
+     */
+    suspend fun recordSuggestion(
+        placeId: String,
+        source: SuggestionSource,
+        detectedAt: Long,
+        latitude: Double,
+        longitude: Double,
+        photoUri: String? = null,
+    ): String?
+
+    /**
+     * Accepts a suggestion: the place becomes visited, and a photo that came
+     * with it is imported and attached.
+     *
+     * A failed photo import does not fail the confirmation. The user said they
+     * were there, and that is the fact worth keeping; losing it because a
+     * `content://` grant lapsed in the meantime would be the wrong trade.
+     */
+    suspend fun confirmSuggestion(suggestionId: String)
+
+    /** Rejects a suggestion. The rejection is remembered, so it is not re-asked. */
+    suspend fun dismissSuggestion(suggestionId: String)
+
+    /** How many are waiting. For the badge, and for the notification's decision to fire. */
+    suspend fun pendingSuggestionCount(): Int
 }

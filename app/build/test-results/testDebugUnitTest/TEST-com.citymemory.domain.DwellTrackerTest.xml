@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.citymemory.domain.DwellTrackerTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-08-18T10:46:45.528Z" hostname="macs-MacBook-Pro.local" time="0.001">
+  <properties/>
+  <testcase name="the anchor is the centroid of the stay, not the first fix" classname="com.citymemory.domain.DwellTrackerTest" time="0.0"/>
+  <testcase name="drifting inside the radius is still one stay" classname="com.citymemory.domain.DwellTrackerTest" time="0.0"/>
+  <testcase name="a long gap in the samples is not evidence of staying" classname="com.citymemory.domain.DwellTrackerTest" time="0.001"/>
+  <testcase name="the first fix is an arrival, never a dwell" classname="com.citymemory.domain.DwellTrackerTest" time="0.0"/>
+  <testcase name="walking out of the radius starts again" classname="com.citymemory.domain.DwellTrackerTest" time="0.0"/>
+  <testcase name="a clock set backwards starts again rather than producing negative time" classname="com.citymemory.domain.DwellTrackerTest" time="0.0"/>
+  <testcase name="a gap of one missed sampling run still counts as one stay" classname="com.citymemory.domain.DwellTrackerTest" time="0.0"/>
+  <testcase name="a broken thread starts a new stay, which the repository then dedupes" classname="com.citymemory.domain.DwellTrackerTest" time="0.0"/>
+  <testcase name="accuracy is kept at its best, not its latest" classname="com.citymemory.domain.DwellTrackerTest" time="0.0"/>
+  <testcase name="staying past twenty minutes reports exactly once" classname="com.citymemory.domain.DwellTrackerTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

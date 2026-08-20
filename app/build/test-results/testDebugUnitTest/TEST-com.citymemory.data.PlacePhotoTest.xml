@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.citymemory.data.PlacePhotoTest" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-08-18T10:46:21.289Z" hostname="macs-MacBook-Pro.local" time="1.227">
+  <properties/>
+  <testcase name="removing a place the user added takes its photos with it" classname="com.citymemory.data.PlacePhotoTest" time="0.123"/>
+  <testcase name="deleting a photo that is already gone is not an error" classname="com.citymemory.data.PlacePhotoTest" time="0.008"/>
+  <testcase name="the path comes from the store, not from the row" classname="com.citymemory.data.PlacePhotoTest" time="0.112"/>
+  <testcase name="photos belong to their own place" classname="com.citymemory.data.PlacePhotoTest" time="0.111"/>
+  <testcase name="a visit and a review survive photos being added and removed" classname="com.citymemory.data.PlacePhotoTest" time="0.109"/>
+  <testcase name="a picked photo is copied in and attached to the place" classname="com.citymemory.data.PlacePhotoTest" time="0.106"/>
+  <testcase name="an unreadable image writes no row at all" classname="com.citymemory.data.PlacePhotoTest" time="0.11"/>
+  <testcase name="deleting a photo takes the file with it" classname="com.citymemory.data.PlacePhotoTest" time="0.108"/>
+  <testcase name="a place stops accepting photos once it is full" classname="com.citymemory.data.PlacePhotoTest" time="0.108"/>
+  <testcase name="a full place still accepts photos again once one is removed" classname="com.citymemory.data.PlacePhotoTest" time="0.11"/>
+  <testcase name="removing a place with several photos leaves none of their files behind" classname="com.citymemory.data.PlacePhotoTest" time="0.111"/>
+  <testcase name="photos come back oldest first" classname="com.citymemory.data.PlacePhotoTest" time="0.11"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

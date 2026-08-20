@@ -5,7 +5,11 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.citymemory.data.local.database.CityMemoryDatabase
 import com.citymemory.data.local.seed.DatabaseSeeder
+import com.citymemory.data.dwell.FakeDwellStateStore
 import com.citymemory.data.map.MockMumbaiGeometryProvider
+import com.citymemory.data.photo.NoPhotoLocationReader
+import com.citymemory.data.photo.PhotoVisitImporter
+import com.citymemory.util.NoVisitNotifier
 import com.citymemory.domain.model.GeoPoint
 import com.citymemory.util.LocationFix
 import com.citymemory.SeedPlaces
@@ -57,7 +61,14 @@ class ExploreViewModelTest {
             .allowMainThreadQueries()
             .build()
         repository = PlaceRepositoryImpl(database, DatabaseSeeder(database, SeedPlaces.catalog))
-        viewModel = ExploreViewModel(repository, MockMumbaiGeometryProvider(), locationSource)
+        viewModel = ExploreViewModel(
+            repository = repository,
+            geometryProvider = MockMumbaiGeometryProvider(),
+            locationSource = locationSource,
+            dwellStateStore = FakeDwellStateStore(isEnabled = false),
+            photoVisitImporter = PhotoVisitImporter(repository, NoPhotoLocationReader),
+            visitNotifier = NoVisitNotifier,
+        )
     }
 
     @After

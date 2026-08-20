@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:ns1="http://schemas.android.com/tools" xmlns:ns2="urn:oasis:names:tc:xliff:document:1.2">
     <attr format="reference" name="nestedScrollViewStyle"/>
+    <bool name="enable_system_alarm_service_default">true</bool>
+    <bool name="enable_system_foreground_service_default">true</bool>
+    <bool name="enable_system_job_service_default">false</bool>
+    <bool name="workmanager_test_configuration">false</bool>
     <color name="androidx_core_ripple_material_light">#1f000000</color>
     <color name="androidx_core_secondary_text_default_material_light">#8a000000</color>
     <color name="call_notification_answer_color">#1d873b</color>
@@ -104,6 +108,10 @@
     <item name="wrapped_composition_tag" type="id"/>
     <integer name="m3c_window_layout_in_display_cutout_mode">1</integer>
     <integer name="status_bar_notification_info_maxnum">999</integer>
+    <plurals name="suggestion_notification_more">
+        <item quantity="one">Tap to log it. One more place is waiting too.</item>
+        <item quantity="other">Tap to log it. %1$d more places are waiting too.</item>
+    </plurals>
     <string name="androidx_startup" translatable="false">androidx.startup</string>
     <string name="app_name">City Memory</string>
     <string name="autofill">Autofill</string>
@@ -193,6 +201,10 @@
     <string name="state_off">Off</string>
     <string name="state_on">On</string>
     <string name="status_bar_notification_info_overflow">999+</string>
+    <string name="suggestion_channel_description">Quiet questions about places you stayed at, so you can log them with one tap.</string>
+    <string name="suggestion_channel_name">Places you may have been</string>
+    <string name="suggestion_notification_body">Tap to log it — or to say it was somewhere else.</string>
+    <string name="suggestion_notification_title">Were you at %1$s?</string>
     <string name="switch_role">Switch</string>
     <string name="tab">Tab</string>
     <string name="template_percent"><ns2:g id="percentage">%1$d</ns2:g> percent.</string>

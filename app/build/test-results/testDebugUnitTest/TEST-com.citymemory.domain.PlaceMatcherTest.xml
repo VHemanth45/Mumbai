@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.citymemory.domain.PlaceMatcherTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-08-18T10:46:45.534Z" hostname="macs-MacBook-Pro.local" time="0.001">
+  <properties/>
+  <testcase name="the reported distance is the true one, not the weighted one" classname="com.citymemory.domain.PlaceMatcherTest" time="0.001"/>
+  <testcase name="an empty catalog is not a crash" classname="com.citymemory.domain.PlaceMatcherTest" time="0.0"/>
+  <testcase name="the prior reorders near neighbours but cannot rescue a far one" classname="com.citymemory.domain.PlaceMatcherTest" time="0.0"/>
+  <testcase name="a fix too vague to name a place names none" classname="com.citymemory.domain.PlaceMatcherTest" time="0.0"/>
+  <testcase name="at most the limit comes back, best first" classname="com.citymemory.domain.PlaceMatcherTest" time="0.0"/>
+  <testcase name="a photo prefers the landmark over the cafe" classname="com.citymemory.domain.PlaceMatcherTest" time="0.0"/>
+  <testcase name="a vague fix looks further, but never past the ceiling" classname="com.citymemory.domain.PlaceMatcherTest" time="0.0"/>
+  <testcase name="nothing in range yields nothing rather than a bad guess" classname="com.citymemory.domain.PlaceMatcherTest" time="0.0"/>
+  <testcase name="a dwell prefers somewhere you can sit for twenty minutes" classname="com.citymemory.domain.PlaceMatcherTest" time="0.0"/>
+  <testcase name="the nearest place wins when categories are equal" classname="com.citymemory.domain.PlaceMatcherTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

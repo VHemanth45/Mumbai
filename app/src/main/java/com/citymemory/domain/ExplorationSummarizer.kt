@@ -4,9 +4,9 @@ import com.citymemory.domain.model.Achievement
 import com.citymemory.domain.model.AchievementId
 import com.citymemory.domain.model.CategoryProgress
 import com.citymemory.domain.model.ExplorationProgress
+import com.citymemory.domain.model.MapLabel
 import com.citymemory.domain.model.Place
 import com.citymemory.domain.model.PlaceCategory
-import kotlin.math.roundToInt
 
 /**
  * Turns the raw place list into the derived numbers the app displays.
@@ -17,7 +17,15 @@ import kotlin.math.roundToInt
  */
 object ExplorationSummarizer {
 
-    fun progressOf(places: List<Place>): ExplorationProgress {
+    /**
+     * [areas] are the city's named areas, from `CityGeometry.labels`. Passing
+     * none is allowed and simply leaves the neighbourhood count at zero, which
+     * is what a caller that has not loaded the map geometry yet should show.
+     */
+    fun progressOf(
+        places: List<Place>,
+        areas: List<MapLabel> = emptyList(),
+    ): ExplorationProgress {
         if (places.isEmpty()) return ExplorationProgress.Empty
 
         val byCategory = places.groupBy { it.category }
@@ -35,20 +43,19 @@ object ExplorationSummarizer {
             totalCount = places.size,
             wishlistCount = places.count { it.isWishlisted },
             categories = categories,
+            neighbourhoodsExplored = Neighbourhoods.exploredCount(places, areas),
+            neighbourhoodTotal = areas.size,
         )
     }
 
-    fun achievementsOf(places: List<Place>): List<Achievement> {
+    fun achievementsOf(
+        places: List<Place>,
+        areas: List<MapLabel> = emptyList(),
+    ): List<Achievement> {
         val visited = places.filter { it.isVisited }
         val visitedTourist = visited.count { it.category == PlaceCategory.TOURIST }
         val visitedFood = visited.count { it.category.isFood }
-
-        // Expressed in whole percent so the bar fills smoothly rather than snapping.
-        val explorationPercent = if (places.isEmpty()) {
-            0
-        } else {
-            (visited.size.toFloat() / places.size * 100).roundToInt()
-        }
+        val neighbourhoods = Neighbourhoods.exploredCount(places, areas)
 
         return listOf(
             Achievement(
@@ -79,12 +86,16 @@ object ExplorationSummarizer {
                 progress = visitedFood,
                 target = 10,
             ),
+            // Was "reach 50% exploration", which against a catalog of 31,657
+            // places meant visiting 15,829 of them — an achievement no one
+            // could ever unlock, sitting permanently at 0 on the progress
+            // screen. Neighbourhoods are the same idea at a reachable scale.
             Achievement(
                 id = AchievementId.CITY_EXPLORER,
                 title = "City Explorer",
-                description = "Reach 50% exploration",
-                progress = explorationPercent,
-                target = 50,
+                description = "Explore 10 neighbourhoods",
+                progress = neighbourhoods,
+                target = 10,
             ),
         )
     }

@@ -46,6 +46,25 @@ interface LocationSource {
      */
     suspend fun currentLocation(context: Context): LocationFix
 
+    /**
+     * A fix for *sampling*, which is a different question with a different
+     * budget.
+     *
+     * [currentLocation] is sized for someone who just tapped a button: it races
+     * both providers and waits twelve seconds, because a person is watching a
+     * spinner. The dwell sampler asks the same question every quarter of an
+     * hour, all day, and nobody is watching — so it takes whatever the platform
+     * already knows first, and only pays for a real fix when there is nothing
+     * recent enough to use. Most of the time some other app or the system has
+     * kept a fix warm and this costs nothing at all.
+     *
+     * A stale answer is worse than none here, so anything older than
+     * [maxAgeMillis] is refused rather than returned: the tracker tolerates a
+     * missing sample, but a fix from two hours ago would tell it the user is
+     * still sitting somewhere they left.
+     */
+    suspend fun recentLocation(context: Context, maxAgeMillis: Long): LocationFix
+
     companion object {
         /**
          * How long to wait for a satellite fix before giving up.
@@ -102,9 +121,30 @@ class AndroidLocationSource : LocationSource {
         // A last known fix is free and instant, and while it is standing in the
         // right building it is a far better answer than a spinner. Anything
         // stale enough to be in the wrong neighbourhood is ignored.
-        lastKnownFix(manager)?.let { return it }
+        lastKnownFix(manager, LAST_KNOWN_MAX_AGE_MILLIS, LAST_KNOWN_MAX_ACCURACY_M)
+            ?.let { return it }
 
         val location = withTimeoutOrNull(LocationSource.FIX_TIMEOUT_MILLIS) {
+            firstFix(context, manager)
+        }
+        return location?.let { LocationFix.Found(it.toGeoPoint(), it.accuracyOrNull()) }
+            ?: LocationFix.TimedOut
+    }
+
+    override suspend fun recentLocation(context: Context, maxAgeMillis: Long): LocationFix {
+        if (!hasPermission(context)) return LocationFix.PermissionDenied
+
+        val manager = ContextCompat.getSystemService(context, LocationManager::class.java)
+            ?: return LocationFix.Unavailable
+        if (!LocationManagerCompat.isLocationEnabled(manager)) return LocationFix.Unavailable
+
+        lastKnownFix(manager, maxAgeMillis, SAMPLING_MAX_ACCURACY_M)?.let { return it }
+
+        // Nothing warm. Ask properly, but on a short leash — a sample that has
+        // not arrived in a few seconds is a sample worth skipping, because
+        // another one is due in a quarter of an hour and the tracker is built
+        // to tolerate the gap.
+        val location = withTimeoutOrNull(SAMPLING_FIX_TIMEOUT_MILLIS) {
             firstFix(context, manager)
         }
         return location?.let { LocationFix.Found(it.toGeoPoint(), it.accuracyOrNull()) }
@@ -164,12 +204,16 @@ class AndroidLocationSource : LocationSource {
      * Suppressed: [currentLocation] returns before this on a missing permission.
      */
     @Suppress("MissingPermission")
-    private fun lastKnownFix(manager: LocationManager): LocationFix.Found? {
+    private fun lastKnownFix(
+        manager: LocationManager,
+        maxAgeMillis: Long,
+        maxAccuracyMeters: Float,
+    ): LocationFix.Found? {
         val now = System.currentTimeMillis()
         val best = PROVIDERS
             .mapNotNull { runCatching { manager.getLastKnownLocation(it) }.getOrNull() }
-            .filter { now - it.time <= LAST_KNOWN_MAX_AGE_MILLIS }
-            .filter { it.hasAccuracy() && it.accuracy <= LAST_KNOWN_MAX_ACCURACY_M }
+            .filter { now - it.time <= maxAgeMillis }
+            .filter { it.hasAccuracy() && it.accuracy <= maxAccuracyMeters }
             .minByOrNull { it.accuracy }
             ?: return null
         return LocationFix.Found(best.toGeoPoint(), best.accuracyOrNull())
@@ -258,6 +302,27 @@ class AndroidLocationSource : LocationSource {
          * exactly as confident.
          */
         const val LAST_KNOWN_MAX_ACCURACY_M = 100f
+
+        /**
+         * How vague a *sampled* fix may be, in metres.
+         *
+         * Looser than the interactive one, because this is not being used to
+         * drop a pin — it is being compared against a dwell radius of eighty
+         * metres, and a fix good to a hundred and fifty still tells the
+         * tracker whether the user is in the same block or a different suburb.
+         * Much past this and the answer stops meaning anything.
+         */
+        const val SAMPLING_MAX_ACCURACY_M = 150f
+
+        /**
+         * How long a background sample waits, five seconds.
+         *
+         * Not twelve. Nobody is watching this one, and the next chance comes
+         * round in fifteen minutes — so holding the GPS radio open for a cold
+         * fix is spending battery on a question that will be asked again
+         * shortly anyway.
+         */
+        const val SAMPLING_FIX_TIMEOUT_MILLIS = 5_000L
     }
 }
 

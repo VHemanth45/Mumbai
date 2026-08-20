@@ -1,5 +1,9 @@
 package com.citymemory.domain.model
 
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sqrt
+
 /**
  * Geometry primitives for the city visualization.
  *
@@ -11,7 +15,29 @@ package com.citymemory.domain.model
 data class GeoPoint(
     val latitude: Double,
     val longitude: Double,
-)
+) {
+    /**
+     * Metres between two points, equirectangular.
+     *
+     * Not haversine. Across one city the two disagree by centimetres, and this
+     * is called in the inner loop of everything that asks "what is near here" —
+     * 89 times per visited place to count neighbourhoods, 31,657 times to match
+     * a coordinate against the catalog. It stays a multiply and a square root.
+     *
+     * It would be the wrong function for two points on different continents,
+     * which is not a thing this app can ask.
+     */
+    fun distanceTo(other: GeoPoint): Double {
+        val meanLatitude = (latitude + other.latitude) / 2.0 * PI / 180.0
+        val dLat = (latitude - other.latitude) * METRES_PER_DEGREE_LATITUDE
+        val dLng = (longitude - other.longitude) * METRES_PER_DEGREE_LATITUDE * cos(meanLatitude)
+        return sqrt(dLat * dLat + dLng * dLng)
+    }
+
+    companion object {
+        const val METRES_PER_DEGREE_LATITUDE = 111_320.0
+    }
+}
 
 data class GeoBounds(
     val minLatitude: Double,

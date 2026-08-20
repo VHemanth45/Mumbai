@@ -1,4 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">City Memory</string>
+
+    <!-- Suggested visits: the dwell detector and the photo importer. -->
+    <string name="suggestion_channel_name">Places you may have been</string>
+    <string name="suggestion_channel_description">Quiet questions about places you stayed at, so you can log them with one tap.</string>
+    <string name="suggestion_notification_title">Were you at %1$s?</string>
+    <string name="suggestion_notification_body">Tap to log it — or to say it was somewhere else.</string>
+    <plurals name="suggestion_notification_more">
+        <item quantity="one">Tap to log it. One more place is waiting too.</item>
+        <item quantity="other">Tap to log it. %1$d more places are waiting too.</item>
+    </plurals>
 </resources>

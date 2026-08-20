@@ -26,4 +26,13 @@ class FakeLocationSource(
         calls++
         return if (granted) fix else LocationFix.PermissionDenied
     }
+
+    /** Counted separately, so a test can tell the cheap path from the interactive one. */
+    var samples: Int = 0
+        private set
+
+    override suspend fun recentLocation(context: Context, maxAgeMillis: Long): LocationFix {
+        samples++
+        return if (granted) fix else LocationFix.PermissionDenied
+    }
 }

@@ -22,6 +22,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.citymemory.data.local.database.CityMemoryDatabase
 import com.citymemory.data.local.seed.DatabaseSeeder
 import com.citymemory.SeedPlaces
+import com.citymemory.data.map.MockMumbaiGeometryProvider
 import com.citymemory.data.repository.PlaceRepositoryImpl
 import com.citymemory.domain.model.PlaceCategory
 import com.citymemory.domain.repository.PlaceRepository
@@ -118,7 +119,7 @@ class ScreenInteractionTest {
     }
 
     private fun showProgress() {
-        val viewModel = ProgressViewModel(repository)
+        val viewModel = ProgressViewModel(repository, MockMumbaiGeometryProvider())
         setScreen { ProgressScreen(viewModel = viewModel) }
     }
 
@@ -291,19 +292,27 @@ class ScreenInteractionTest {
     fun `progress starts at zero and reflects visits`(): Unit = runBlocking {
         showProgress()
 
-        awaitText("0 / ${SeedPlaces.total} Places")
-        compose.onNodeWithText("0%").assertIsDisplayed()
+        // By the headline's own description rather than by its text: a bare
+        // "0" also matches every achievement's progress counter below it.
+        awaitText("Places Explored")
+        compose.onNodeWithContentDescription("0 Places Explored").assertIsDisplayed()
         compose.onNodeWithText("Explorer Level 1").assertIsDisplayed()
 
-        // Several visits, not one: the headline percentage is rounded down, and
-        // a single place in a catalog this size does not reach a whole percent.
+        // The headline is the count, with no denominator behind it. It used to
+        // be the share of the catalog visited, which against a real Mumbai of
+        // 31,657 places does not reach a whole percent until the 317th — so the
+        // largest number on the screen read "0%" to someone who had been to
+        // twenty-two places. See `ExplorationHeadline`.
         val visits = 5
         SeedPlaces.ids(PlaceCategory.TOURIST, visits).forEach {
             repository.setVisited(it, true)
         }
 
-        awaitText("$visits / ${SeedPlaces.total} Places")
-        compose.onNodeWithText("${visits * 100 / SeedPlaces.total}%").assertIsDisplayed()
+        compose.waitUntil(timeoutMillis = 20_000) {
+            compose.onAllNodesWithContentDescription("$visits Places Explored")
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithContentDescription("$visits Places Explored").assertIsDisplayed()
 
         // Tourist Places is the first category row, and the visited places are
         // tourist ones, so that row is the one that moved. It sits below the
@@ -316,7 +325,7 @@ class ScreenInteractionTest {
     @Test
     fun `achievements unlock from state alone`(): Unit = runBlocking {
         showProgress()
-        awaitText("0 / ${SeedPlaces.total} Places")
+        awaitText("Places Explored")
 
         compose.onNode(hasScrollAction())
             .performScrollToNode(hasText("ACHIEVEMENTS", substring = true))

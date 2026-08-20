@@ -3,9 +3,15 @@ local
 color city_night
 color ic_launcher_background
 drawable ic_launcher_foreground
+drawable ic_stat_city_memory
 mipmap ic_launcher
 mipmap ic_launcher_round
+plurals suggestion_notification_more
 string app_name
+string suggestion_channel_description
+string suggestion_channel_name
+string suggestion_notification_body
+string suggestion_notification_title
 style Theme.CityMemory
 xml backup_rules
 xml data_extraction_rules

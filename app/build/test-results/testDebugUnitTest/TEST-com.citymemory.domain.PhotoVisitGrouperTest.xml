@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.citymemory.domain.PhotoVisitGrouperTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-08-18T10:46:45.533Z" hostname="macs-MacBook-Pro.local" time="0.001">
+  <properties/>
+  <testcase name="eleven photos of one lunch are one visit" classname="com.citymemory.domain.PhotoVisitGrouperTest" time="0.0"/>
+  <testcase name="the same place on two different evenings is two visits" classname="com.citymemory.domain.PhotoVisitGrouperTest" time="0.0"/>
+  <testcase name="walking the length of a beach is still one visit" classname="com.citymemory.domain.PhotoVisitGrouperTest" time="0.0"/>
+  <testcase name="the cover is the first photo, and the centre is where the cluster sat" classname="com.citymemory.domain.PhotoVisitGrouperTest" time="0.001"/>
+  <testcase name="two places in the same hour are two visits" classname="com.citymemory.domain.PhotoVisitGrouperTest" time="0.0"/>
+  <testcase name="nothing in, nothing out" classname="com.citymemory.domain.PhotoVisitGrouperTest" time="0.0"/>
+  <testcase name="a quiet stretch inside one meal does not split it" classname="com.citymemory.domain.PhotoVisitGrouperTest" time="0.0"/>
+  <testcase name="unsorted input is grouped as if it were sorted" classname="com.citymemory.domain.PhotoVisitGrouperTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

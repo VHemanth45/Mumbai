@@ -2,7 +2,15 @@
 <resources>
     <color name="city_night">#06070C</color>
     <color name="ic_launcher_background">#0B0D14</color>
+    <plurals name="suggestion_notification_more">
+        <item quantity="one">Tap to log it. One more place is waiting too.</item>
+        <item quantity="other">Tap to log it. %1$d more places are waiting too.</item>
+    </plurals>
     <string name="app_name">City Memory</string>
+    <string name="suggestion_channel_description">Quiet questions about places you stayed at, so you can log them with one tap.</string>
+    <string name="suggestion_channel_name">Places you may have been</string>
+    <string name="suggestion_notification_body">Tap to log it — or to say it was somewhere else.</string>
+    <string name="suggestion_notification_title">Were you at %1$s?</string>
     <style name="Theme.CityMemory" parent="android:Theme.Material.NoActionBar">
         <item name="android:windowBackground">@color/city_night</item>
         <item name="android:statusBarColor">@android:color/transparent</item>

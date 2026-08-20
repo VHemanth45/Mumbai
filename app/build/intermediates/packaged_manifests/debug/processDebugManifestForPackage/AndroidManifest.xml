@@ -28,6 +28,34 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
+    <!--
+      Background location, for the dwell detector that offers to log a place
+      you stayed at. Strictly optional: the feature is off until the user turns
+      it on in Explore, and everything else in the app works without it.
+
+      Android 10 (API 29) split this out from the foreground permissions, and
+      from Android 11 (API 30) it cannot be requested in the same dialog as
+      them — the system shows no dialog at all for it. The only thing that works
+      is to hold the foreground grant first and then send the user to Settings,
+      which is what `BackgroundLocationPermission` does and why the feature asks
+      twice.
+    -->
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+
+    <!-- Android 13 (API 33) made posting a notification a runtime permission. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!--
+      Reads the GPS tag out of a photo the user picked.
+
+      Not a storage permission: photos come from the system picker, which grants
+      access to exactly the images chosen and needs nothing declared. But since
+      Android 10 (API 29) MediaStore *redacts* location out of the bytes it
+      hands over unless the app holds this and asks for the original — so
+      without it every photo looks as though it were taken nowhere.
+    -->
+    <uses-permission android:name="android.permission.ACCESS_MEDIA_LOCATION" />
+
     <!-- The app works without a GPS receiver; it just cannot offer the shortcut. -->
     <uses-feature
         android:name="android.hardware.location.gps"
@@ -47,6 +75,11 @@
             <data android:scheme="https" />
         </intent>
     </queries>
+
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
     <permission
         android:name="com.citymemory.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
@@ -75,10 +108,19 @@
           re-inflate the whole tree and re-run the map's projection of ~387,000
           points, which is most of a second on a mid-range phone.
         -->
+        <!--
+          launchMode: the notification has to arrive at the Activity that is
+          already running. Left at `standard`, tapping it while the app is open
+          builds a second MainActivity with its own NavController, its own
+          composition and its own copy of the map projection the configChanges
+          note below exists to avoid — twice the memory and a visible relaunch,
+          for a tap that meant "show me the thing I already have open".
+        -->
         <activity
             android:name="com.citymemory.MainActivity"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|density|fontScale|uiMode|layoutDirection|locale"
             android:exported="true"
+            android:launchMode="singleTop"
             android:resizeableActivity="true"
             android:theme="@style/Theme.CityMemory"
             android:windowSoftInputMode="adjustResize" >
@@ -88,10 +130,20 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name="androidx.compose.ui.tooling.PreviewActivity"
-            android:exported="true" />
 
+        <!--
+          WorkManager's own initialiser is removed and the library is started on
+          demand instead, from `AppContainer`.
+
+          The default initialiser is a ContentProvider, which runs on every cold
+          start of the process — including the many that have nothing to do with
+          this feature — and it opens WorkManager's own database while doing it.
+          This app goes out of its way to keep process creation cheap and not to
+          touch a database until a screen asks for data; a provider that does
+          both, for a feature most users will leave switched off, is the wrong
+          trade. `Configuration.Provider` on the Application supplies the
+          configuration when something first asks.
+        -->
         <provider
             android:name="androidx.startup.InitializationProvider"
             android:authorities="com.citymemory.androidx-startup"
@@ -107,6 +159,101 @@
                 android:value="androidx.startup" />
         </provider>
 
+        <service
+            android:name="androidx.work.impl.background.systemalarm.SystemAlarmService"
+            android:directBootAware="false"
+            android:enabled="@bool/enable_system_alarm_service_default"
+            android:exported="false" />
+        <service
+            android:name="androidx.work.impl.background.systemjob.SystemJobService"
+            android:directBootAware="false"
+            android:enabled="@bool/enable_system_job_service_default"
+            android:exported="true"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
+        <service
+            android:name="androidx.work.impl.foreground.SystemForegroundService"
+            android:directBootAware="false"
+            android:enabled="@bool/enable_system_foreground_service_default"
+            android:exported="false" />
+
+        <receiver
+            android:name="androidx.work.impl.utils.ForceStopRunnable$BroadcastReceiver"
+            android:directBootAware="false"
+            android:enabled="true"
+            android:exported="false" />
+        <receiver
+            android:name="androidx.work.impl.background.systemalarm.ConstraintProxy$BatteryChargingProxy"
+            android:directBootAware="false"
+            android:enabled="false"
+            android:exported="false" >
+            <intent-filter>
+                <action android:name="android.intent.action.ACTION_POWER_CONNECTED" />
+                <action android:name="android.intent.action.ACTION_POWER_DISCONNECTED" />
+            </intent-filter>
+        </receiver>
+        <receiver
+            android:name="androidx.work.impl.background.systemalarm.ConstraintProxy$BatteryNotLowProxy"
+            android:directBootAware="false"
+            android:enabled="false"
+            android:exported="false" >
+            <intent-filter>
+                <action android:name="android.intent.action.BATTERY_OKAY" />
+                <action android:name="android.intent.action.BATTERY_LOW" />
+            </intent-filter>
+        </receiver>
+        <receiver
+            android:name="androidx.work.impl.background.systemalarm.ConstraintProxy$StorageNotLowProxy"
+            android:directBootAware="false"
+            android:enabled="false"
+            android:exported="false" >
+            <intent-filter>
+                <action android:name="android.intent.action.DEVICE_STORAGE_LOW" />
+                <action android:name="android.intent.action.DEVICE_STORAGE_OK" />
+            </intent-filter>
+        </receiver>
+        <receiver
+            android:name="androidx.work.impl.background.systemalarm.ConstraintProxy$NetworkStateProxy"
+            android:directBootAware="false"
+            android:enabled="false"
+            android:exported="false" >
+            <intent-filter>
+                <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
+            </intent-filter>
+        </receiver>
+        <receiver
+            android:name="androidx.work.impl.background.systemalarm.RescheduleReceiver"
+            android:directBootAware="false"
+            android:enabled="false"
+            android:exported="false" >
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+            </intent-filter>
+        </receiver>
+        <receiver
+            android:name="androidx.work.impl.background.systemalarm.ConstraintProxyUpdateReceiver"
+            android:directBootAware="false"
+            android:enabled="@bool/enable_system_alarm_service_default"
+            android:exported="false" >
+            <intent-filter>
+                <action android:name="androidx.work.impl.background.systemalarm.UpdateProxies" />
+            </intent-filter>
+        </receiver>
+        <receiver
+            android:name="androidx.work.impl.diagnostics.DiagnosticsReceiver"
+            android:directBootAware="false"
+            android:enabled="true"
+            android:exported="true"
+            android:permission="android.permission.DUMP" >
+            <intent-filter>
+                <action android:name="androidx.work.diagnostics.REQUEST_DIAGNOSTICS" />
+            </intent-filter>
+        </receiver>
+
+        <activity
+            android:name="androidx.compose.ui.tooling.PreviewActivity"
+            android:exported="true" />
         <activity
             android:name="androidx.activity.ComponentActivity"
             android:exported="true"
